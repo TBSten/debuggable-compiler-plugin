@@ -13,7 +13,9 @@ import kotlin.test.assertFalse
 class PluginEnabledTests : CompilerTestBase() {
 
     @Test fun `plugin disabled — compilation still succeeds`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import kotlinx.coroutines.flow.MutableStateFlow
             @Debuggable(isSingleton = true) object MyObj {
@@ -24,7 +26,9 @@ class PluginEnabledTests : CompilerTestBase() {
     }
 
     @Test fun `plugin disabled — Flow changes are not logged`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import kotlinx.coroutines.flow.MutableStateFlow
             @Debuggable(isSingleton = true) object MyObj {
@@ -41,7 +45,9 @@ class PluginEnabledTests : CompilerTestBase() {
     }
 
     @Test fun `plugin disabled — methods are not logged`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable(isSingleton = true) object MyObj {
                 fun doWork() {}
@@ -54,7 +60,9 @@ class PluginEnabledTests : CompilerTestBase() {
 
     @Test fun `plugin disabled — non-singleton non-AutoCloseable class compiles without error`() {
         // When disabled, the validator should also be skipped
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable class MyPlainClass
         """.trimIndent(), pluginEnabled = false)
@@ -63,7 +71,9 @@ class PluginEnabledTests : CompilerTestBase() {
     }
 
     @Test fun `plugin enabled by default`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import kotlinx.coroutines.flow.MutableStateFlow
             @Debuggable(isSingleton = true) object MyObj {

@@ -176,11 +176,48 @@ class CompilationTests : CompilerTestBase() {
         }
     """)
 
+    // ── 失敗ケース ────────────────────────────────────────────────────────────
+
+    @Test fun `Debuggable on non-singleton non-AutoCloseable class is error`() = err("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        @Debuggable class MyPlainClass
+    """)
+
+    @Test fun `Debuggable on interface is error`() = err("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        @Debuggable interface MyInterface
+    """)
+
+    @Test fun `FocusDebuggable and IgnoreDebuggable on same property is error`() = err("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+        import me.tbsten.debuggable.runtime.annotations.IgnoreDebuggable
+        import kotlinx.coroutines.flow.MutableStateFlow
+        @Debuggable(isSingleton = true) object MyObj {
+            @FocusDebuggable @IgnoreDebuggable val conflict = MutableStateFlow(0)
+        }
+    """)
+
+    @Test fun `FocusDebuggable and IgnoreDebuggable on same method is error`() = err("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+        import me.tbsten.debuggable.runtime.annotations.IgnoreDebuggable
+        @Debuggable(isSingleton = true) object MyObj {
+            @FocusDebuggable @IgnoreDebuggable fun conflict() {}
+        }
+    """)
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private fun ok(source: String) {
         val result = compile(source.trimIndent())
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode,
             "Expected compilation success but got errors:\n${result.messages}")
+    }
+
+    private fun err(source: String) {
+        val result = compile(source.trimIndent())
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode,
+            "Expected compilation error but succeeded. messages:\n${result.messages}")
     }
 }

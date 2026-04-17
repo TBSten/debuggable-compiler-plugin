@@ -117,7 +117,9 @@ class LogActionTests : CompilerTestBase() {
     }
 
     @Test fun `method is logged before execution`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable(isSingleton = true) object Exec {
                 var sideEffect = false
@@ -144,7 +146,9 @@ class LogActionTests : CompilerTestBase() {
     }
 
     @Test fun `AutoCloseable public method is logged`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable class MyRepo : AutoCloseable {
                 fun fetch(): String = "data"
@@ -159,7 +163,9 @@ class LogActionTests : CompilerTestBase() {
     }
 
     @Test fun `AutoCloseable close method logs`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable class MyCloseable : AutoCloseable {
                 override fun close() {}
@@ -172,7 +178,9 @@ class LogActionTests : CompilerTestBase() {
     }
 
     @Test fun `method with default parameter logs`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable(isSingleton = true) object MyObj {
                 fun greet(name: String = "World"): String = "Hello ${'$'}name"
@@ -184,7 +192,9 @@ class LogActionTests : CompilerTestBase() {
     }
 
     @Test fun `IgnoreDebuggable on method prevents logAction`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import me.tbsten.debuggable.runtime.annotations.IgnoreDebuggable
             @Debuggable(isSingleton = true) object MyObj {
@@ -198,7 +208,9 @@ class LogActionTests : CompilerTestBase() {
     }
 
     @Test fun `FocusDebuggable on method in Focus mode logs only that method`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
             @Debuggable(isSingleton = true) object MyObj {
@@ -221,7 +233,9 @@ class LogActionTests : CompilerTestBase() {
     }
 
     @Test fun `vararg method logs correctly`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable(isSingleton = true) object MyObj {
                 fun doWithVararg(vararg args: String): Int = args.size

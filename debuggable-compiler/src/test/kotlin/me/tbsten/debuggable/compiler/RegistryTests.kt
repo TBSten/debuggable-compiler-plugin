@@ -17,7 +17,9 @@ import kotlin.test.assertTrue
 class RegistryTests : CompilerTestBase() {
 
     @Test fun `AutoCloseable has hidden registry property`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable class MyCloseable : AutoCloseable {
                 override fun close() {}
@@ -31,7 +33,9 @@ class RegistryTests : CompilerTestBase() {
     }
 
     @Test fun `AutoCloseable registry is not null before close`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable class MyCloseable : AutoCloseable {
                 override fun close() {}
@@ -45,7 +49,9 @@ class RegistryTests : CompilerTestBase() {
     }
 
     @Test fun `AutoCloseable close cancels coroutine scope`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import kotlinx.coroutines.flow.MutableStateFlow
             @Debuggable class MyCloseable : AutoCloseable {
@@ -65,7 +71,9 @@ class RegistryTests : CompilerTestBase() {
     }
 
     @Test fun `close can be called multiple times safely`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable class MyCloseable : AutoCloseable {
                 override fun close() {}
@@ -79,7 +87,9 @@ class RegistryTests : CompilerTestBase() {
     }
 
     @Test fun `singleton registry is never closed by plugin`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import kotlinx.coroutines.flow.MutableStateFlow
             @Debuggable(isSingleton = true) object MyObj {
@@ -99,7 +109,9 @@ class RegistryTests : CompilerTestBase() {
     }
 
     @Test fun `registry close stops all observations`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import kotlinx.coroutines.flow.MutableStateFlow
             @Debuggable class Repo : AutoCloseable {
@@ -122,7 +134,9 @@ class RegistryTests : CompilerTestBase() {
     }
 
     @Test fun `new instance has independent registry`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import kotlinx.coroutines.flow.MutableStateFlow
             @Debuggable class Repo : AutoCloseable {
@@ -143,7 +157,9 @@ class RegistryTests : CompilerTestBase() {
     }
 
     @Test fun `AutoCloseable original close logic still runs`() {
-        val result = compile("""
+        val result = compile(
+            // language=kotlin
+            """
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable class MyCloseable : AutoCloseable {
                 var closedCalled = false
