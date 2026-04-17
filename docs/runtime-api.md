@@ -19,17 +19,17 @@ annotation class Debuggable(
 ### `@FocusDebuggable`
 
 ```kotlin
-@Target(AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 annotation class FocusDebuggable
 ```
 
-クラス内に1つでも存在すると **Focus モード**が有効になり、このアノテーションが付いたプロパティ**のみ**が追跡対象になる。
+クラス内に1つでも存在すると **Focus モード**が有効になり、このアノテーションが付いたプロパティ・メソッド**のみ**が追跡対象になる。
 
 ### `@IgnoreDebuggable`
 
 ```kotlin
-@Target(AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 annotation class IgnoreDebuggable
 ```
