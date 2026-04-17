@@ -1,9 +1,12 @@
 rootProject.name = "Debuggable-Compiler-Plugin"
 
 pluginManagement {
+    plugins {
+        id("org.jetbrains.kotlin.jvm") version "2.3.20"
+    }
     repositories {
         google {
-            content { 
+            content {
               	includeGroupByRegex("com\\.android.*")
               	includeGroupByRegex("com\\.google.*")
               	includeGroupByRegex("androidx.*")
@@ -29,4 +32,6 @@ dependencyResolutionManagement {
     }
 }
 include(":debuggable-runtime")
+include(":debuggable-compiler")
+include(":debuggable-gradle")
 

@@ -44,7 +44,7 @@ kotlin {
 }
 
 android {
-    namespace = "me.tbsten.debuggable.debuggable-runtime"
+    namespace = "me.tbsten.debuggable.runtime"
     compileSdk = 36
     defaultConfig {
         minSdk = 23
