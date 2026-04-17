@@ -1,5 +1,13 @@
 plugins {
     id("org.jetbrains.kotlin.jvm")
+    alias(libs.plugins.buildconfig)
+}
+
+val debuggablePluginId = project.property("debuggable.pluginId") as String
+
+buildConfig {
+    packageName("me.tbsten.debuggable.compiler")
+    buildConfigField("String", "PLUGIN_ID", "\"$debuggablePluginId\"")
 }
 
 dependencies {

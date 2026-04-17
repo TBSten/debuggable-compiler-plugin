@@ -1,6 +1,7 @@
 [versions]
 
 kotlin = "2.3.20"
+buildconfig = "5.4.0"
 agp = "8.12.3"
 maven-publish = "0.34.0"
 kotlinx-coroutines = "1.10.2"
@@ -25,3 +26,4 @@ kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 android-kmp-library = { id = "com.android.library", version.ref = "agp" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }

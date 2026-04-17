@@ -15,12 +15,12 @@ class DebuggableGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
 
-    override fun getCompilerPluginId(): String = "me.tbsten.debuggable"
+    override fun getCompilerPluginId(): String = BuildConfig.PLUGIN_ID
 
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
-        groupId = "me.tbsten.debuggable",
-        artifactId = "debuggable-compiler",
-        version = "1.0.0",
+        groupId = BuildConfig.COMPILER_ARTIFACT_GROUP_ID,
+        artifactId = BuildConfig.COMPILER_ARTIFACT_ID,
+        version = BuildConfig.COMPILER_ARTIFACT_VERSION,
     )
 
     override fun applyToCompilation(
