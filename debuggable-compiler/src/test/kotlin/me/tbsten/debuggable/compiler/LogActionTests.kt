@@ -1,0 +1,234 @@
+package me.tbsten.debuggable.compiler
+
+import com.tschuchort.compiletesting.KotlinCompilation
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+/**
+ * logAction 注入の RED テスト群。
+ * Phase 3 (IR Injection) 実装後にすべて GREEN になることを意図している。
+ */
+class LogActionTests : CompilerTestBase() {
+
+    private val singletonSource = """
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        @Debuggable(isSingleton = true) object MyObj {
+            fun doNothing() {}
+            fun doWithInt(x: Int): Int = x * 2
+            fun doWithString(s: String): String = s
+            fun doWithMultiple(a: Int, b: String, c: Boolean): String = "${'$'}a ${'$'}b ${'$'}c"
+            fun doWithNull(value: String?): String? = value
+            fun doReturn(): Int = 42
+            private fun hiddenPrivate() {}
+            internal fun hiddenInternal() {}
+            fun throwsException(): Nothing = throw RuntimeException("oops")
+        }
+    """.trimIndent()
+
+    @Test fun `public method call logs action`() {
+        val result = compile(singletonSource)
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doNothing") }
+        assertTrue(output.contains("[Debuggable]"), "Expected logAction output, got: $output")
+        assertTrue(output.contains("doNothing"), "Expected method name in log, got: $output")
+    }
+
+    @Test fun `public method log contains parentheses`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doNothing") }
+        assertTrue(output.contains("doNothing()"), "Expected 'doNothing()' in log, got: $output")
+    }
+
+    @Test fun `method with int arg logs arg value`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doWithInt", 5) }
+        assertTrue(output.contains("doWithInt(5)"), "Expected 'doWithInt(5)' in log, got: $output")
+    }
+
+    @Test fun `method with string arg logs arg value`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doWithString", "hello") }
+        assertTrue(output.contains("doWithString(hello)"), "Expected arg in log, got: $output")
+    }
+
+    @Test fun `method with multiple args logs all args`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doWithMultiple", 1, "x", true) }
+        assertTrue(output.contains("doWithMultiple"), "Expected method name in log, got: $output")
+        assertTrue(output.contains("1"), "Expected first arg in log, got: $output")
+        assertTrue(output.contains("x"), "Expected second arg in log, got: $output")
+    }
+
+    @Test fun `method with null arg logs null`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doWithNull", null) }
+        assertTrue(output.contains("doWithNull"), "Expected method name in log, got: $output")
+    }
+
+    @Test fun `method return value is preserved`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val returnValue = obj.call("doReturn")
+        assertEquals(42, returnValue, "Return value should be unchanged")
+    }
+
+    @Test fun `method return value preserved when logging`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        captureSystemOut { obj.call("doReturn") }  // log side effect
+        val returnValue = obj.call("doReturn")
+        assertEquals(42, returnValue, "Return value should not be affected by logging")
+    }
+
+    @Test fun `private method is NOT logged`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut {
+            obj.javaClass.getDeclaredMethod("hiddenPrivate").apply { isAccessible = true }.invoke(obj)
+        }
+        assertFalse(output.contains("hiddenPrivate"), "Private method should not be logged, got: $output")
+    }
+
+    @Test fun `internal method is NOT logged`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("hiddenInternal") }
+        assertFalse(output.contains("[Debuggable]"), "Internal method should not be logged, got: $output")
+    }
+
+    @Test fun `exception from method propagates`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        var threw = false
+        try {
+            obj.call("throwsException")
+        } catch (e: Exception) {
+            threw = true
+        }
+        assertTrue(threw, "Exception should propagate through injected logAction")
+    }
+
+    @Test fun `method is logged before execution`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            @Debuggable(isSingleton = true) object Exec {
+                var sideEffect = false
+                fun act() { sideEffect = true }
+            }
+        """.trimIndent())
+        val obj = result.getObject("Exec")
+        val log = StringBuilder()
+        val output = captureSystemOut { obj.call("act") }
+        // logAction should appear regardless of side effect order
+        assertTrue(output.contains("[Debuggable]"), "Expected logAction before execution, got: $output")
+    }
+
+    @Test fun `method called multiple times logs multiple times`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut {
+            obj.call("doNothing")
+            obj.call("doNothing")
+            obj.call("doNothing")
+        }
+        val count = output.lines().count { it.contains("doNothing") }
+        assertEquals(3, count, "Expected 3 log entries, got: $output")
+    }
+
+    @Test fun `AutoCloseable public method is logged`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            @Debuggable class MyRepo : AutoCloseable {
+                fun fetch(): String = "data"
+                override fun close() {}
+            }
+        """.trimIndent())
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val instance = result.getInstance("MyRepo")
+        val output = captureSystemOut { instance.call("fetch") }
+        assertTrue(output.contains("[Debuggable]"), "Expected logAction for AutoCloseable method, got: $output")
+        assertTrue(output.contains("fetch"), "Expected method name in log, got: $output")
+    }
+
+    @Test fun `AutoCloseable close method logs`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            @Debuggable class MyCloseable : AutoCloseable {
+                override fun close() {}
+            }
+        """.trimIndent())
+        val instance = result.getInstance("MyCloseable")
+        val output = captureSystemOut { instance.call("close") }
+        assertTrue(output.contains("[Debuggable]") && output.contains("close"),
+            "Expected logAction for close(), got: $output")
+    }
+
+    @Test fun `method with default parameter logs`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            @Debuggable(isSingleton = true) object MyObj {
+                fun greet(name: String = "World"): String = "Hello ${'$'}name"
+            }
+        """.trimIndent())
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("greet", "Kotlin") }
+        assertTrue(output.contains("greet"), "Expected method name in log, got: $output")
+    }
+
+    @Test fun `IgnoreDebuggable on method prevents logAction`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.IgnoreDebuggable
+            @Debuggable(isSingleton = true) object MyObj {
+                @IgnoreDebuggable fun skipMe() {}
+                fun trackMe() {}
+            }
+        """.trimIndent())
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("skipMe") }
+        assertFalse(output.contains("skipMe"), "Ignored method should not be logged, got: $output")
+    }
+
+    @Test fun `FocusDebuggable on method in Focus mode logs only that method`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+            @Debuggable(isSingleton = true) object MyObj {
+                @FocusDebuggable fun focused() {}
+                fun other() {}
+            }
+        """.trimIndent())
+        val obj = result.getObject("MyObj")
+        val focusedOut = captureSystemOut { obj.call("focused") }
+        val otherOut = captureSystemOut { obj.call("other") }
+        assertTrue(focusedOut.contains("[Debuggable]"), "Focus method should be logged, got: $focusedOut")
+        assertFalse(otherOut.contains("[Debuggable]"), "Non-focus method should not be logged, got: $otherOut")
+    }
+
+    @Test fun `log output prefixed with Debuggable tag`() {
+        val result = compile(singletonSource)
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doNothing") }
+        assertTrue(output.startsWith("[Debuggable]"), "Log should start with [Debuggable] prefix, got: $output")
+    }
+
+    @Test fun `vararg method logs correctly`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            @Debuggable(isSingleton = true) object MyObj {
+                fun doWithVararg(vararg args: String): Int = args.size
+            }
+        """.trimIndent())
+        val obj = result.getObject("MyObj")
+        val output = captureSystemOut { obj.call("doWithVararg", arrayOf("a", "b")) }
+        assertTrue(output.contains("doWithVararg"), "Expected method name in log, got: $output")
+    }
+}

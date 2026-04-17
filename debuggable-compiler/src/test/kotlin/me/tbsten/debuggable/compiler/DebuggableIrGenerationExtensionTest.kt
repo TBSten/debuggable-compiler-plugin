@@ -3,11 +3,9 @@ package me.tbsten.debuggable.compiler
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCompilerApi::class)
 class DebuggableIrGenerationExtensionTest {
 
     private fun compile(source: String): JvmCompilationResult {

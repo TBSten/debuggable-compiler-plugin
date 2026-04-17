@@ -16,8 +16,20 @@ dependencies {
     testImplementation(libs.kotlin.compiler.embeddable)
     testImplementation(libs.kctfork.core)
     testImplementation(kotlin("test"))
+    testImplementation(project(":debuggable-runtime"))
+    testImplementation(libs.kotlinx.coroutines.core)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-opt-in=org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi",
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+        )
+    }
 }
