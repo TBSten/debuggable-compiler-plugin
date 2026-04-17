@@ -142,6 +142,21 @@ class FocusIgnoreTests : CompilerTestBase() {
         assertFalse(otherOut.contains("[Debuggable]"), "Non-focused method should NOT be tracked in Focus mode, got: $otherOut")
     }
 
+    @Test fun `Focus mode with only property FocusDebuggable — methods not tracked`() {
+        val result = compile("""
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+            import kotlinx.coroutines.flow.MutableStateFlow
+            @Debuggable(isSingleton = true) object MyObj {
+                @FocusDebuggable val focused = MutableStateFlow(0)
+                fun someMethod() {}
+            }
+        """.trimIndent())
+        val obj = result.getObject("MyObj")
+        val methodOut = captureSystemOut { obj.call("someMethod") }
+        assertFalse(methodOut.contains("[Debuggable]"), "Non-focused method should NOT be tracked in Focus mode, got: $methodOut")
+    }
+
     @Test fun `multiple FocusDebuggable properties all tracked`() {
         val result = compile("""
             import me.tbsten.debuggable.runtime.annotations.Debuggable
@@ -228,7 +243,8 @@ class FocusIgnoreTests : CompilerTestBase() {
             }
         """.trimIndent())
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-        assertTrue(result.messages.contains("warning") || result.messages.contains("Warning"),
+        // Kotlin warning messages are prefixed with "w: " in the message output
+        assertTrue(result.messages.contains("w: ") || result.messages.contains("warning") || result.messages.contains("Warning"),
             "Expected compilation warning for @FocusDebuggable on non-Flow property, got: ${result.messages}")
     }
 }

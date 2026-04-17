@@ -2,19 +2,24 @@ package me.tbsten.debuggable.compiler
 
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.PluginOption
 import com.tschuchort.compiletesting.SourceFile
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 abstract class CompilerTestBase {
 
-    protected fun compile(source: String): JvmCompilationResult =
-        compile(SourceFile.kotlin("Main.kt", source))
+    protected fun compile(source: String, pluginEnabled: Boolean = true): JvmCompilationResult =
+        compile(sources = arrayOf(SourceFile.kotlin("Main.kt", source)), pluginEnabled = pluginEnabled)
 
-    protected fun compile(vararg sources: SourceFile): JvmCompilationResult =
+    protected fun compile(vararg sources: SourceFile, pluginEnabled: Boolean = true): JvmCompilationResult =
         KotlinCompilation().apply {
             this.sources = sources.toList()
             compilerPluginRegistrars = listOf(DebuggableCompilerPluginRegistrar())
+            commandLineProcessors = listOf(DebuggableCommandLineProcessor())
+            pluginOptions = listOf(
+                PluginOption(BuildConfig.PLUGIN_ID, "enabled", pluginEnabled.toString()),
+            )
             inheritClassPath = true
             messageOutputStream = System.out
         }.compile()
@@ -38,7 +43,10 @@ abstract class CompilerTestBase {
         classLoader.loadClass(name).getDeclaredConstructor().newInstance()
 
     protected fun Any.call(method: String, vararg args: Any?): Any? {
-        val types = args.map { it?.javaClass ?: Any::class.java }.toTypedArray()
-        return javaClass.methods.first { it.name == method }.invoke(this, *args)
+        val allMethods = javaClass.methods.toList() + javaClass.declaredMethods.toList()
+        val m = allMethods.firstOrNull { it.name == method }
+            ?: allMethods.first { it.name.startsWith("$method\$") }
+        m.isAccessible = true
+        return m.invoke(this, *args)
     }
 }

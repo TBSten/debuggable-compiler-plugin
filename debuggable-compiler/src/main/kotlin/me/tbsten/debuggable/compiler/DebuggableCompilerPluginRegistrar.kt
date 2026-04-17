@@ -12,6 +12,8 @@ class DebuggableCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override val pluginId: String = BuildConfig.PLUGIN_ID
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
-        IrGenerationExtension.registerExtension(DebuggableIrGenerationExtension(configuration))
+        val enabled = configuration[KEY_ENABLED] ?: true
+        if (!enabled) return
+        IrGenerationExtension.registerExtension(DebuggableIrGenerationExtension())
     }
 }

@@ -46,10 +46,9 @@ class FlowTrackingTests : CompilerTestBase() {
                 val counter = MutableStateFlow(99)
             }
         """.trimIndent())
-        val obj = result.getObject("MyObj")
-        // Trigger class initialization which sets up observation
+        // getObject triggers class initialization (and thus debuggableFlow calls) inside capture window
         val output = captureSystemOut {
-            obj.javaClass.getDeclaredField("counter").isAccessible = true
+            result.getObject("MyObj")
             Thread.sleep(100)
         }
         assertTrue(output.contains("99"), "Expected initial value in log, got: $output")
@@ -68,8 +67,11 @@ class FlowTrackingTests : CompilerTestBase() {
             @Suppress("UNCHECKED_CAST")
             val flow = obj.javaClass.getDeclaredField("count").apply { isAccessible = true }
                 .get(obj) as MutableStateFlow<Int>
+            // Add delays between emissions so the coroutine can process each value
             flow.value = 1
+            Thread.sleep(50)
             flow.value = 2
+            Thread.sleep(50)
             flow.value = 3
             Thread.sleep(200)
         }
@@ -221,10 +223,9 @@ class FlowTrackingTests : CompilerTestBase() {
             }
         """.trimIndent())
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-        // StateFlow is a subtype of Flow, should be tracked
-        val obj = result.getObject("MyObj")
+        // StateFlow is a subtype of Flow, should be tracked; class init inside capture window to see initial value log
         val output = captureSystemOut {
-            obj.javaClass.getDeclaredField("_count").apply { isAccessible = true }
+            result.getObject("MyObj")
             Thread.sleep(100)
         }
         assertTrue(output.contains("[Debuggable]"), "StateFlow should be tracked, got: $output")
