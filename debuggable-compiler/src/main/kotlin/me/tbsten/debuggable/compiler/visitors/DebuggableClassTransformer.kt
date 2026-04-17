@@ -8,6 +8,7 @@ import me.tbsten.debuggable.compiler.util.isFlow
 import me.tbsten.debuggable.compiler.util.isState
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrConstructor
@@ -15,6 +16,7 @@ import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.getAnnotation
 import org.jetbrains.kotlin.ir.util.hasAnnotation
@@ -39,13 +41,19 @@ internal class DebuggableClassTransformer(
         val properties = irClass.declarations.filterIsInstance<IrProperty>()
         val functions = irClass.declarations.filterIsInstance<IrSimpleFunction>()
 
+        // Warn: isSingleton=true on a class (should be on an object declaration)
+        if (isSingleton && irClass.kind != ClassKind.OBJECT) {
+            messageCollector.report(
+                CompilerMessageSeverity.WARNING,
+                "@Debuggable(isSingleton=true) on class '${irClass.name}': " +
+                    "isSingleton=true is intended for object declarations. " +
+                    "For classes with lifecycle, implement AutoCloseable instead.",
+            )
+        }
+
         // Validate: @Debuggable on non-singleton non-AutoCloseable class
         if (!isSingleton) {
-            val isAutoCloseable = irClass.superTypes.any { type ->
-                val fqn = type.classFqName?.asString()
-                fqn == "java.lang.AutoCloseable" || fqn == "kotlin.AutoCloseable"
-            }
-            if (!isAutoCloseable) {
+            if (!irClass.implementsAutoCloseable()) {
                 messageCollector.report(
                     CompilerMessageSeverity.ERROR,
                     "@Debuggable requires isSingleton=true or the class to implement AutoCloseable",
@@ -123,13 +131,28 @@ internal class DebuggableClassTransformer(
         )
     }
 
+    private fun IrClass.implementsAutoCloseable(): Boolean =
+        superTypes.any { type ->
+            val fqn = type.classFqName?.asString()
+            if (fqn == "java.lang.AutoCloseable" || fqn == "kotlin.AutoCloseable") return@any true
+            type.classOrNull?.owner?.implementsAutoCloseable() ?: false
+        }
+
     private fun IrClass.isSingletonDebuggable(): Boolean {
         val annotation = getAnnotation(AnnotationFqNames.DEBUGGABLE) ?: return false
         val arg = annotation.arguments.firstOrNull() ?: return false
         if (arg !is IrConst) return false
+        // IrConst.value is internal in the Kotlin compiler module boundary, but the JVM
+        // bytecode exposes getValue() publicly. Reflect to stay compatible across K2 versions.
         return try {
             arg.javaClass.getMethod("getValue").invoke(arg) as? Boolean ?: false
-        } catch (_: Exception) {
+        } catch (_: NoSuchMethodException) {
+            // Kotlin IR internal API changed — assume non-singleton to avoid misclassification.
+            messageCollector.report(
+                CompilerMessageSeverity.WARNING,
+                "Debuggable plugin: could not read isSingleton value from @Debuggable annotation " +
+                    "on '${name}' (IrConst.getValue() not found). Treating as non-singleton.",
+            )
             false
         }
     }

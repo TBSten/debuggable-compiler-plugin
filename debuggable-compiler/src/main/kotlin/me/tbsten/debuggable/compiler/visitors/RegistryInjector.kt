@@ -20,11 +20,14 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.name.Name
+
+private const val CLOSE_METHOD_NAME = "close"
 
 internal fun addRegistryProperty(
     irClass: IrClass,
@@ -70,15 +73,26 @@ internal fun injectRegistryClose(
     symbolProvider: SymbolProvider,
     pluginContext: IrPluginContext,
 ) {
-    val closeFunction = irClass.declarations.filterIsInstance<IrSimpleFunction>().firstOrNull { fn ->
-        fn.name.asString() == "close" &&
-            fn.parameters.none { it.kind == IrParameterKind.Regular } &&
-            !fn.isFakeOverride
-    } ?: return
+    val allCloseFunctions = irClass.declarations.filterIsInstance<IrSimpleFunction>()
+        .filter { fn -> fn.name.asString() == CLOSE_METHOD_NAME && fn.parameters.none { it.kind == IrParameterKind.Regular } }
+
+    val closeFunction = allCloseFunctions.firstOrNull { !it.isFakeOverride }
+
+    if (closeFunction == null) {
+        // close() is only inherited (fake override) — registry.close() will never be called.
+        if (allCloseFunctions.any { it.isFakeOverride }) {
+            pluginContext.messageCollector.report(
+                CompilerMessageSeverity.WARNING,
+                "@Debuggable class '${irClass.name}' inherits close() without overriding it — " +
+                    "the debug registry will not be released. Override close() and call super.close().",
+            )
+        }
+        return
+    }
 
     val closeRegistryFn = symbolProvider.debugCleanupRegistryClass.owner.declarations
         .filterIsInstance<IrSimpleFunction>()
-        .firstOrNull { it.name.asString() == "close" && it.parameters.none { p -> p.kind == IrParameterKind.Regular } }
+        .firstOrNull { it.name.asString() == CLOSE_METHOD_NAME && it.parameters.none { p -> p.kind == IrParameterKind.Regular } }
         ?.symbol ?: return
 
     val builder = DeclarationIrBuilder(pluginContext, closeFunction.symbol)

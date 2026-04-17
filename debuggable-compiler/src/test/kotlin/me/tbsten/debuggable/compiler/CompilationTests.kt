@@ -207,6 +207,23 @@ class CompilationTests : CompilerTestBase() {
         }
     """)
 
+    // ── 警告ケース ────────────────────────────────────────────────────────────
+
+    @Test fun `Debuggable isSingleton=true on class emits warning`() = warn("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        @Debuggable(isSingleton = true) class MyClass : AutoCloseable {
+            override fun close() {}
+        }
+    """)
+
+    @Test fun `Debuggable AutoCloseable inheriting close without override emits warning`() = warn("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        open class Base : AutoCloseable {
+            override fun close() {}
+        }
+        @Debuggable class Child : Base(), AutoCloseable
+    """)
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private fun ok(source: String) {
@@ -219,5 +236,15 @@ class CompilationTests : CompilerTestBase() {
         val result = compile(source.trimIndent())
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode,
             "Expected compilation error but succeeded. messages:\n${result.messages}")
+    }
+
+    private fun warn(source: String) {
+        val result = compile(source.trimIndent())
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode,
+            "Expected compilation success but got errors:\n${result.messages}")
+        assertTrue(
+            result.messages.contains("w: ") || result.messages.contains("warning", ignoreCase = true),
+            "Expected at least one compilation warning, got:\n${result.messages}",
+        )
     }
 }
