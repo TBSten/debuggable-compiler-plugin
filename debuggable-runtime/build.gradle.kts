@@ -58,35 +58,11 @@ android {
     }
 }
 
-//Publishing your Kotlin Multiplatform library to Maven Central
-//https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-publish-libraries.html
+// Coordinates, license, developer, SCM, etc. come from the root build.gradle.kts.
+// Each module only needs to set its own name and description.
 mavenPublishing {
-    publishToMavenCentral()
-    coordinates("me.tbsten.debuggable", "debuggable-runtime", "1.0.0")
-
     pom {
-        name = "Debuggable Compiler Plugin"
-        description = "Kotlin Multiplatform library"
-        url = "github url" //todo
-
-        licenses {
-            license {
-                name = "MIT"
-                url = "https://opensource.org/licenses/MIT"
-            }
-        }
-
-        developers {
-            developer {
-                id = "" //todo github nickname
-                name = "" //todo full name
-                email = "" //todo email
-            }
-        }
-
-        scm {
-            url = "github url" //todo
-        }
+        name = "Debuggable Runtime"
+        description = "Runtime library consumed by @Debuggable-annotated code (KMP)"
     }
-    if (project.hasProperty("signing.keyId")) signAllPublications()
 }

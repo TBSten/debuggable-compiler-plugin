@@ -1,6 +1,7 @@
 plugins {
     id("org.jetbrains.kotlin.jvm")
     alias(libs.plugins.buildconfig)
+    alias(libs.plugins.maven.publish)
 }
 
 val debuggablePluginId = project.property("debuggable.pluginId") as String
@@ -8,6 +9,14 @@ val debuggablePluginId = project.property("debuggable.pluginId") as String
 buildConfig {
     packageName("me.tbsten.debuggable.compiler")
     buildConfigField("String", "PLUGIN_ID", "\"$debuggablePluginId\"")
+}
+
+// Coordinates, license, developer, SCM, etc. come from the root build.gradle.kts.
+mavenPublishing {
+    pom {
+        name = "Debuggable Compiler Plugin"
+        description = "Kotlin compiler plugin that auto-instruments @Debuggable classes"
+    }
 }
 
 dependencies {

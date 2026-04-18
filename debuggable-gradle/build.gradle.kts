@@ -2,6 +2,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
     `java-gradle-plugin`
     alias(libs.plugins.buildconfig)
+    alias(libs.plugins.maven.publish)
 }
 
 val debuggablePluginId = project.property("debuggable.pluginId") as String
@@ -24,6 +25,16 @@ gradlePlugin {
         create("debuggable") {
             id = debuggablePluginId
             implementationClass = "me.tbsten.debuggable.gradle.DebuggableGradlePlugin"
+            displayName = "Debuggable Gradle Plugin"
+            description = "Applies the Debuggable compiler plugin to Kotlin modules"
         }
+    }
+}
+
+// Coordinates, license, developer, SCM, etc. come from the root build.gradle.kts.
+mavenPublishing {
+    pom {
+        name = "Debuggable Gradle Plugin"
+        description = "Gradle plugin that applies the Debuggable compiler plugin"
     }
 }
