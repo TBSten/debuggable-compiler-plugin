@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":debuggable-compiler-compat"))
     runtimeOnly(project(":debuggable-compiler-compat-k23"))
     runtimeOnly(project(":debuggable-compiler-compat-k21"))
+    runtimeOnly(project(":debuggable-compiler-compat-k20"))
 
     testImplementation(libs.kotlin.compiler.embeddable)
     testImplementation(libs.kctfork.core)
