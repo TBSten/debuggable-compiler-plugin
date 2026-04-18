@@ -96,3 +96,28 @@ If `@FocusDebuggable` or similar is applied to a type other than these, a warnin
 
 ### 4. Zero Overhead in Release Builds
 When `enabled.set(false)` is configured on the Gradle plugin side (the default for Release builds), the KCP performs no IR transformations. No debugging code or Runtime library dependencies remain in the production binary, so there is zero performance impact.
+
+---
+
+## 🧪 Try it Locally
+
+The repository ships with two runnable samples under [`integration-test/`](integration-test/) that consume the plugin from `mavenLocal()`.
+
+### 1. Publish the plugin locally
+
+From the repo root:
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.0`) into `~/.m2/`.
+
+### 2. Pick a sample
+
+| Sample | Target | Lifecycle pattern | README |
+|--------|--------|-------------------|--------|
+| [`integration-test/cmp`](integration-test/cmp) | Compose Multiplatform Desktop (JVM) | `@Debuggable(isSingleton = true) object` | [cmp/README.md](integration-test/cmp/README.md) |
+| [`integration-test/android`](integration-test/android) | Android app | `@Debuggable class : ViewModel(), AutoCloseable` | [android/README.md](integration-test/android/README.md) |
+
+Each sample README explains how to run it, what to click, and where in the source the `@Debuggable` annotation is applied. See [`integration-test/README.md`](integration-test/README.md) for a side-by-side summary.

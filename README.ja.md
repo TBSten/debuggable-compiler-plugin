@@ -95,3 +95,28 @@ val uiState = mutableStateOf(UiState()).also {
 
 ### 4. リリース時のゼロ・オーバーヘッド
 Gradleプラグイン側で `enabled.set(false)` に設定されている場合（デフォルトでは Release ビルド）、KCP は IR 変換を一切行いません。本番環境のバイナリにはデバッグ用のコードや Runtime ライブラリの依存が一切残らないため、パフォーマンスへの影響はありません。
+
+---
+
+## 🧪 サンプル
+
+[`integration-test/`](integration-test/) 配下に、`mavenLocal()` からプラグインを取得する実行可能なサンプルを2つ用意しています。
+
+### 1. ローカルに publish
+
+リポジトリのルートで:
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.0`) が `~/.m2/` にインストールされます。
+
+### 2. サンプルを選ぶ
+
+| サンプル | ターゲット | ライフサイクルパターン | README |
+|---------|-----------|------------------------|--------|
+| [`integration-test/cmp`](integration-test/cmp) | Compose Multiplatform Desktop (JVM) | `@Debuggable(isSingleton = true) object` | [cmp/README.md](integration-test/cmp/README.md) |
+| [`integration-test/android`](integration-test/android) | Android アプリ | `@Debuggable class : ViewModel(), AutoCloseable` | [android/README.md](integration-test/android/README.md) |
+
+それぞれの README に起動方法・何をクリックするか・`@Debuggable` がソースのどこに付いているかが書かれています。サイドバイサイドの概要は [`integration-test/README.md`](integration-test/README.md) を参照してください。
