@@ -29,6 +29,7 @@ internal fun injectFlowObservations(
     isSingleton: Boolean,
     registryField: IrField?,
     symbolProvider: SymbolProvider,
+    loggerResolver: LoggerResolver,
     pluginContext: IrPluginContext,
 ) {
     for (property in targetProperties) {
@@ -58,7 +59,9 @@ internal fun injectFlowObservations(
             builder.irGetField(builder.irGet(irClass.thisReceiver!!), registryField)
         }
 
-        // Wrap the field initializer: originalInit.also { it.debuggableFlow(name, registry) }
+        val loggerExpr = loggerResolver.resolve(irClass)
+
+        // Wrap the field initializer: originalInit.also { it.debuggableFlow(name, registry, logger) }
         // In IR: block { val tmp = originalInit; tmp.debuggableFlow(...); tmp }
         field.initializer = builder.irExprBody(
             builder.irBlock(resultType = field.type) {
@@ -68,6 +71,7 @@ internal fun injectFlowObservations(
                     insertExtensionReceiver(irGet(tmp))
                     arguments[wrapParams[0]] = irString(property.name.asString())
                     arguments[wrapParams[1]] = registryExpr
+                    arguments[wrapParams[2]] = loggerExpr
                 }
                 +irGet(tmp)
             }

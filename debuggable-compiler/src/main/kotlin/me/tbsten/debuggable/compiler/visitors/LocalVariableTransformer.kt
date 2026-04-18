@@ -2,6 +2,7 @@
 
 package me.tbsten.debuggable.compiler.visitors
 
+import me.tbsten.debuggable.compiler.DebuggableOptions
 import me.tbsten.debuggable.compiler.util.AnnotationFqNames
 import me.tbsten.debuggable.compiler.util.isDebuggableTarget
 import me.tbsten.debuggable.compiler.util.isFlow
@@ -55,9 +56,14 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
  */
 internal class LocalVariableTransformer(
     private val pluginContext: IrPluginContext,
+    private val options: DebuggableOptions = DebuggableOptions(
+        observeFlow = true,
+        logAction = true,
+    ),
 ) : IrElementTransformerVoid() {
 
     private val symbolProvider = SymbolProvider(pluginContext)
+    private val loggerResolver = LoggerResolver(symbolProvider, options, pluginContext)
 
     override fun visitSimpleFunction(declaration: IrSimpleFunction): IrSimpleFunction {
         val body = declaration.body as? IrBlockBody
@@ -133,7 +139,11 @@ internal class LocalVariableTransformer(
         val wrapParams = wrapFunction.owner.parameters
             .filter { it.kind == IrParameterKind.Regular }
 
-        // Rewrite: originalInit  ->  block { val tmp = originalInit; tmp.debuggableFlow(name, registry); tmp }
+        // Local variables don't have an owning class for per-class @Debuggable(logger=...),
+        // so we resolve against null and fall back to Gradle/Default.
+        val loggerExpr = loggerResolver.resolve(owningClass = null)
+
+        // Rewrite: originalInit  ->  block { val tmp = originalInit; tmp.debuggableFlow(name, registry, logger); tmp }
         variable.initializer = irBlock(resultType = variable.type, origin = IrStatementOrigin.INITIALIZE_FIELD) {
             val tmp = irTemporary(originalInit, irType = variable.type)
             +irCall(wrapFunction).apply {
@@ -141,6 +151,7 @@ internal class LocalVariableTransformer(
                 insertExtensionReceiver(irGet(tmp))
                 arguments[wrapParams[0]] = irString(variable.name.asString())
                 arguments[wrapParams[1]] = irGet(registryVar)
+                arguments[wrapParams[2]] = loggerExpr
             }
             +irGet(tmp)
         }

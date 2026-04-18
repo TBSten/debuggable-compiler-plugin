@@ -14,7 +14,7 @@ class DebuggableIrGenerationExtension(
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         moduleFragment.transformChildrenVoid(DebuggableClassTransformer(pluginContext, options))
         if (options.observeFlow) {
-            moduleFragment.transformChildrenVoid(LocalVariableTransformer(pluginContext))
+            moduleFragment.transformChildrenVoid(LocalVariableTransformer(pluginContext, options))
         }
         moduleFragment.patchDeclarationParents()
     }

@@ -33,6 +33,7 @@ class DebuggableGradlePlugin : KotlinCompilerPluginSupportPlugin {
                 SubpluginOption("enabled", extension.enabled.get().toString()),
                 SubpluginOption("observeFlow", extension.observeFlow.get().toString()),
                 SubpluginOption("logAction", extension.logAction.get().toString()),
+                SubpluginOption("defaultLogger", extension.defaultLogger.get()),
             )
         }
     }

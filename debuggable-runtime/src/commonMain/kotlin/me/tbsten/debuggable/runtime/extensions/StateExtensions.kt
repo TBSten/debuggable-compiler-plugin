@@ -4,7 +4,8 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import me.tbsten.debuggable.runtime.logging.debugLog
+import me.tbsten.debuggable.runtime.logging.DebugLogger
+import me.tbsten.debuggable.runtime.logging.DefaultDebugLogger
 import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
 
 /**
@@ -19,9 +20,10 @@ import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
 fun <T> State<T>.debuggableState(
     name: String,
     registry: DebugCleanupRegistry = DebugCleanupRegistry.Default,
+    logger: DebugLogger = DefaultDebugLogger,
 ): State<T> {
     snapshotFlow { value }
-        .onEach { debugLog("$name: $it") }
+        .onEach { logger.log("$name: $it") }
         .launchIn(registry.coroutineScope)
     return this
 }

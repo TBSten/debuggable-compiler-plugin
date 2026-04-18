@@ -16,6 +16,21 @@ internal class SymbolProvider(private val pluginContext: IrPluginContext) {
         ) ?: error("DebugCleanupRegistry not found on classpath")
     }
 
+    val debugLoggerClass: IrClassSymbol by lazy {
+        pluginContext.referenceClass(
+            ClassId.fromString("me/tbsten/debuggable/runtime/logging/DebugLogger")
+        ) ?: error("DebugLogger not found on classpath")
+    }
+
+    val defaultDebugLoggerClass: IrClassSymbol by lazy {
+        pluginContext.referenceClass(
+            ClassId.fromString("me/tbsten/debuggable/runtime/logging/DefaultDebugLogger")
+        ) ?: error("DefaultDebugLogger not found on classpath")
+    }
+
+    fun resolveLoggerByFqn(fqn: String): IrClassSymbol? =
+        ClassId.fromString(fqn.replace('.', '/')).let(pluginContext::referenceClass)
+
     val debugCleanupRegistryDefaultClass: IrClassSymbol by lazy {
         pluginContext.referenceClass(
             ClassId(

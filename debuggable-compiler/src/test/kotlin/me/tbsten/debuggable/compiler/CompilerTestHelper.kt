@@ -41,12 +41,14 @@ abstract class CompilerTestBase {
         pluginEnabled: Boolean = true,
         observeFlow: Boolean = true,
         logAction: Boolean = true,
+        defaultLogger: String = "",
     ): JvmCompilationResult =
         compile(
             sources = arrayOf(SourceFile.kotlin("Main.kt", source)),
             pluginEnabled = pluginEnabled,
             observeFlow = observeFlow,
             logAction = logAction,
+            defaultLogger = defaultLogger,
         )
 
     protected fun compile(
@@ -54,6 +56,7 @@ abstract class CompilerTestBase {
         pluginEnabled: Boolean = true,
         observeFlow: Boolean = true,
         logAction: Boolean = true,
+        defaultLogger: String = "",
     ): JvmCompilationResult =
         KotlinCompilation().apply {
             this.sources = sources.toList()
@@ -63,6 +66,7 @@ abstract class CompilerTestBase {
                 PluginOption(BuildConfig.PLUGIN_ID, "enabled", pluginEnabled.toString()),
                 PluginOption(BuildConfig.PLUGIN_ID, "observeFlow", observeFlow.toString()),
                 PluginOption(BuildConfig.PLUGIN_ID, "logAction", logAction.toString()),
+                PluginOption(BuildConfig.PLUGIN_ID, "defaultLogger", defaultLogger),
             )
             inheritClassPath = true
             messageOutputStream = System.out

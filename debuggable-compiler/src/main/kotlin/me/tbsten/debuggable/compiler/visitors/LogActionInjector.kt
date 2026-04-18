@@ -15,7 +15,9 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 
 internal fun injectLogAction(
     functions: List<IrSimpleFunction>,
+    owningClass: org.jetbrains.kotlin.ir.declarations.IrClass?,
     symbolProvider: SymbolProvider,
+    loggerResolver: LoggerResolver,
     pluginContext: IrPluginContext,
 ) {
     val logActionParams = symbolProvider.logActionFunction.owner.parameters
@@ -33,6 +35,7 @@ internal fun injectLogAction(
                 values = function.parameters.filter { it.kind == IrParameterKind.Regular }
                     .map { builder.irGet(it) },
             )
+            arguments[logActionParams[2]] = loggerResolver.resolve(owningClass)
         }
 
         function.body = builder.irBlockBody {

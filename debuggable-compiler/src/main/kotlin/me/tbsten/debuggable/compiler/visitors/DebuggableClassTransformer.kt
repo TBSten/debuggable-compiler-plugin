@@ -16,9 +16,12 @@ import org.jetbrains.kotlin.ir.declarations.IrConstructor
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.expressions.IrClassReference
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.getAnnotation
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
@@ -29,6 +32,7 @@ internal class DebuggableClassTransformer(
 ) : IrElementTransformerVoid() {
 
     private val symbolProvider = SymbolProvider(pluginContext)
+    private val loggerResolver = LoggerResolver(symbolProvider, options, pluginContext)
     private val messageCollector = pluginContext.messageCollector
 
     override fun visitClass(declaration: IrClass) = super.visitClass(declaration).also {
@@ -81,6 +85,28 @@ internal class DebuggableClassTransformer(
                 messageCollector.report(
                     CompilerMessageSeverity.ERROR,
                     "@Debuggable requires isSingleton=true or the class to implement AutoCloseable",
+                )
+                return
+            }
+        }
+
+        // Validate: @Debuggable(logger = X::class) — X must be an object implementing DebugLogger.
+        val loggerClass = irClass.extractDebuggableLoggerAnnotationValue()
+        if (loggerClass != null) {
+            val loggerOwner = loggerClass.owner
+            if (loggerOwner.kind != ClassKind.OBJECT) {
+                messageCollector.report(
+                    CompilerMessageSeverity.ERROR,
+                    "@Debuggable(logger = ${loggerOwner.name}::class): logger must be declared as an `object` singleton.",
+                )
+                return
+            }
+            val debugLoggerSymbol = symbolProvider.debugLoggerClass
+            val implementsDebugLogger = loggerOwner.superTypes.any { it.classOrNull == debugLoggerSymbol }
+            if (!implementsDebugLogger) {
+                messageCollector.report(
+                    CompilerMessageSeverity.ERROR,
+                    "@Debuggable(logger = ${loggerOwner.name}::class): logger must implement DebugLogger.",
                 )
                 return
             }
@@ -153,7 +179,7 @@ internal class DebuggableClassTransformer(
         }
 
         if (options.logAction) {
-            injectLogAction(targetFunctions, symbolProvider, pluginContext)
+            injectLogAction(targetFunctions, irClass, symbolProvider, loggerResolver, pluginContext)
         }
 
         if (options.observeFlow) {
@@ -163,9 +189,22 @@ internal class DebuggableClassTransformer(
                 isSingleton = isSingleton,
                 registryField = registryField,
                 symbolProvider = symbolProvider,
+                loggerResolver = loggerResolver,
                 pluginContext = pluginContext,
             )
         }
+    }
+
+    /**
+     * Reads `@Debuggable(logger = X::class)` and returns X's IrClassSymbol,
+     * or null when the sentinel `Nothing::class` is used (= default).
+     */
+    private fun IrClass.extractDebuggableLoggerAnnotationValue(): IrClassSymbol? {
+        val annotation = getAnnotation(AnnotationFqNames.DEBUGGABLE) ?: return null
+        val loggerArg = annotation.arguments.getOrNull(1) as? IrClassReference ?: return null
+        val symbol = loggerArg.symbol as? IrClassSymbol ?: return null
+        if (symbol.owner.defaultType.classFqName?.asString() == "kotlin.Nothing") return null
+        return symbol
     }
 
     private fun IrClass.implementsAutoCloseable(): Boolean =

@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.config.CompilerConfigurationKey
 internal val KEY_ENABLED = CompilerConfigurationKey.create<Boolean>("debuggable.enabled")
 internal val KEY_OBSERVE_FLOW = CompilerConfigurationKey.create<Boolean>("debuggable.observeFlow")
 internal val KEY_LOG_ACTION = CompilerConfigurationKey.create<Boolean>("debuggable.logAction")
+internal val KEY_DEFAULT_LOGGER = CompilerConfigurationKey.create<String>("debuggable.defaultLogger")
 
 @OptIn(ExperimentalCompilerApi::class)
 class DebuggableCommandLineProcessor : CommandLineProcessor {
@@ -34,6 +35,12 @@ class DebuggableCommandLineProcessor : CommandLineProcessor {
             description = "Inject method call logAction (default: true)",
             required = false,
         ),
+        CliOption(
+            optionName = "defaultLogger",
+            valueDescription = "<fqn>",
+            description = "FQN of a DebugLogger object to use when @Debuggable has no explicit logger; empty = DefaultDebugLogger",
+            required = false,
+        ),
     )
 
     override fun processOption(
@@ -41,11 +48,11 @@ class DebuggableCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration,
     ) {
-        val parsed = value.toBooleanStrict()
         when (option.optionName) {
-            "enabled" -> configuration.put(KEY_ENABLED, parsed)
-            "observeFlow" -> configuration.put(KEY_OBSERVE_FLOW, parsed)
-            "logAction" -> configuration.put(KEY_LOG_ACTION, parsed)
+            "enabled" -> configuration.put(KEY_ENABLED, value.toBooleanStrict())
+            "observeFlow" -> configuration.put(KEY_OBSERVE_FLOW, value.toBooleanStrict())
+            "logAction" -> configuration.put(KEY_LOG_ACTION, value.toBooleanStrict())
+            "defaultLogger" -> configuration.put(KEY_DEFAULT_LOGGER, value)
         }
     }
 }
