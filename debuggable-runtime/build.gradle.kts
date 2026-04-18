@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -9,6 +10,15 @@ plugins {
 }
 
 kotlin {
+    // Pin the runtime library to Kotlin 2.0 language/api so it can be consumed
+    // by projects on Kotlin 2.0+. Without this, classes compiled with 2.3.20
+    // produce metadata that older compilers refuse to load (see smoke-test
+    // failures on 2.0.21 / 2.1.21 — FirIncompatibleClassExpressionChecker).
+    compilerOptions {
+        apiVersion = KotlinVersion.KOTLIN_2_0
+        languageVersion = KotlinVersion.KOTLIN_2_0
+    }
+
     androidTarget {
         compilerOptions { jvmTarget = JvmTarget.JVM_17 }
     }

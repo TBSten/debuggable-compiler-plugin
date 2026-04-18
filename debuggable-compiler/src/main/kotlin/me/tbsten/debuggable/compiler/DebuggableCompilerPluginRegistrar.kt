@@ -1,6 +1,7 @@
 package me.tbsten.debuggable.compiler
 
 import me.tbsten.debuggable.compiler.BuildConfig
+import me.tbsten.debuggable.compiler.compat.registerExtensionCompat
 import me.tbsten.debuggable.compiler.fir.DebuggableFirExtensionRegistrar
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
@@ -21,8 +22,17 @@ class DebuggableCompilerPluginRegistrar : CompilerPluginRegistrar() {
             logAction = configuration[KEY_LOG_ACTION] ?: true,
             defaultLoggerFqn = configuration[KEY_DEFAULT_LOGGER].orEmpty(),
         )
-        FirExtensionRegistrarAdapter.registerExtension(DebuggableFirExtensionRegistrar())
-        IrGenerationExtension.registerExtension(DebuggableIrGenerationExtension(options))
+
+        // Reflection-based registration to support both 2.3.x (ProjectExtensionDescriptor)
+        // and 2.4.0-Beta1+ (ExtensionPointDescriptor). See compat/ExtensionRegistration.kt.
+        registerExtensionCompat(
+            FirExtensionRegistrarAdapter.Companion,
+            DebuggableFirExtensionRegistrar(),
+        )
+        registerExtensionCompat(
+            IrGenerationExtension.Companion,
+            DebuggableIrGenerationExtension(options),
+        )
     }
 }
 

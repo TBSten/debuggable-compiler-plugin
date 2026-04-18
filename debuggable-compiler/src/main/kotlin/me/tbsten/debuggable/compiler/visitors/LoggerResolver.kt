@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.getAnnotation
+import me.tbsten.debuggable.compiler.compat.getAnnotationCompat
 
 /**
  * Resolves the DebugLogger to pass as the `logger` argument of `debuggableFlow` /
@@ -58,7 +58,7 @@ internal class LoggerResolver(
      * `Nothing::class`, or the referenced class cannot be resolved.
      */
     private fun IrClass.extractDebuggableLoggerClass(): IrClassSymbol? {
-        val annotation = getAnnotation(AnnotationFqNames.DEBUGGABLE) ?: return null
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return null
         // @Debuggable(isSingleton, logger) — take the 2nd arg if present.
         val loggerArg = annotation.arguments.getOrNull(1) as? IrClassReference ?: return null
         val symbol = loggerArg.symbol as? IrClassSymbol ?: return null

@@ -22,7 +22,7 @@ import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.getAnnotation
+import me.tbsten.debuggable.compiler.compat.getAnnotationCompat
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 
@@ -200,7 +200,7 @@ internal class DebuggableClassTransformer(
      * or null when the sentinel `Nothing::class` is used (= default).
      */
     private fun IrClass.extractDebuggableLoggerAnnotationValue(): IrClassSymbol? {
-        val annotation = getAnnotation(AnnotationFqNames.DEBUGGABLE) ?: return null
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return null
         val loggerArg = annotation.arguments.getOrNull(1) as? IrClassReference ?: return null
         val symbol = loggerArg.symbol as? IrClassSymbol ?: return null
         if (symbol.owner.defaultType.classFqName?.asString() == "kotlin.Nothing") return null
@@ -215,7 +215,7 @@ internal class DebuggableClassTransformer(
         }
 
     private fun IrClass.isSingletonDebuggable(): Boolean {
-        val annotation = getAnnotation(AnnotationFqNames.DEBUGGABLE) ?: return false
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
         val arg = annotation.arguments.firstOrNull() ?: return false
         if (arg !is IrConst) return false
         // IrConst.value is internal in the Kotlin compiler module boundary, but the JVM
