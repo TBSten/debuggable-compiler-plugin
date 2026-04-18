@@ -20,6 +20,9 @@ mavenPublishing {
 }
 
 dependencies {
+    // stdlib is declared explicitly because `kotlin.stdlib.default.dependency=false`
+    // is set project-wide (see gradle.properties for the reason).
+    implementation(libs.kotlin.stdlib)
     compileOnly(libs.kotlin.compiler.embeddable)
 
     testImplementation(libs.kotlin.compiler.embeddable)

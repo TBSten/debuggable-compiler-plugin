@@ -36,23 +36,41 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            // Use compileOnly so consumers choose their own Compose version.
-            // Without this, our published classfiles would drag the Compose runtime
-            // Kotlin plugin version (currently 1.10.3, metadata [2,1,0]) into every
-            // consumer, forcing their effective Compose upgrade and breaking builds
-            // on Kotlin 2.0 / 2.1 compilers that reject [2,1,0] metadata.
+            // stdlib is compileOnly so it is NOT listed in the published Gradle
+            // module metadata. Otherwise Gradle would force-upgrade consumer
+            // projects to `kotlin-stdlib:2.3.20` (metadata [2,3,0]) — a drop
+            // that blocks Kotlin 2.0 / 2.1 compilers. Consumers' own Kotlin
+            // Gradle plugin will always add a matching stdlib for their target.
+            // Version-explicit coordinate is required because
+            // `kotlin.stdlib.default.dependency=false` also disables the
+            // version auto-resolution of `kotlin("stdlib")`.
+            compileOnly(libs.kotlin.stdlib)
+
+            // Same reasoning as stdlib: consumers choose their own Compose
+            // version. Transitive `compose.runtime` from our module would
+            // upgrade them to 1.10.3 (metadata [2,1,0]).
             compileOnly(compose.runtime)
+
             implementation(libs.kotlinx.coroutines.core)
         }
 
         commonTest.dependencies {
+            // Tests run in-process, so we need stdlib and compose.runtime on
+            // the runtime classpath even though they are compileOnly for main.
+            implementation(libs.kotlin.stdlib)
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
-            // Tests need compose.runtime at runtime since it's only compileOnly in main.
             implementation(compose.runtime)
         }
 
         androidMain.dependencies {
+            // Android needs stdlib on its actual compile classpath — the
+            // commonMain `compileOnly(stdlib)` does not propagate to Android's
+            // releaseCompileClasspath variant. Use `implementation` on this
+            // source set only; the common variant publication still keeps
+            // stdlib as compileOnly so the top-level `.module` requirement
+            // stays loose enough for Kotlin 2.0 / 2.1 consumers.
+            implementation(libs.kotlin.stdlib)
             implementation(libs.kotlinx.coroutines.android)
         }
 
