@@ -1,7 +1,17 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     alias(libs.plugins.buildconfig)
     alias(libs.plugins.maven.publish)
+}
+
+kotlin {
+    // Emit classfiles with `mv=[2,1,0]` so Kotlin 2.1.20+ compilers accept them.
+    compilerOptions {
+        apiVersion = KotlinVersion.KOTLIN_2_1
+        languageVersion = KotlinVersion.KOTLIN_2_1
+    }
 }
 
 mavenPublishing {

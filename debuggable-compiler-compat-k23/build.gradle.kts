@@ -1,7 +1,20 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     alias(libs.plugins.buildconfig)
     alias(libs.plugins.maven.publish)
+}
+
+kotlin {
+    // Emit classfiles with `mv=[2,2,0]` so Kotlin 2.2.0+ compilers accept them
+    // (this impl's `minVersion`). 2.3.20 API calls baked into the bytecode still
+    // require 2.2.0+ at load time, so a 2.2 metadata stamp is the widest we can
+    // claim without misleading older compilers.
+    compilerOptions {
+        apiVersion = KotlinVersion.KOTLIN_2_2
+        languageVersion = KotlinVersion.KOTLIN_2_2
+    }
 }
 
 mavenPublishing {

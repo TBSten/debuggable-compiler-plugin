@@ -36,6 +36,7 @@ include(":debuggable-compiler")
 include(":debuggable-compiler-compat")
 include(":debuggable-compiler-compat-k23")
 include(":debuggable-compiler-compat-k21")
-include(":debuggable-compiler-compat-k20")
+include(":debuggable-compiler-compat-k2020")
+include(":debuggable-compiler-compat-k2000")
 include(":debuggable-gradle")
 

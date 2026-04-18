@@ -17,8 +17,22 @@ object IrInjectorLoader {
     ): IrInjector {
         // Using the interface's own classloader (rather than the thread context) ensures we
         // see the per-version impl JARs that the Kotlin compiler loaded alongside our plugin.
-        val factories = ServiceLoader.load(IrInjector.Factory::class.java, classLoader)
-            .toList()
+        //
+        // Each `debuggable-compiler-compat-kXX` impl references APIs from its target Kotlin
+        // version; factories that can't be linked on the current runtime throw
+        // `NoClassDefFoundError` / `ServiceConfigurationError` during iteration.  Swallow
+        // those and keep the ones that load cleanly.
+        val rawIterator = ServiceLoader.load(IrInjector.Factory::class.java, classLoader).iterator()
+        val factories = mutableListOf<IrInjector.Factory>()
+        while (true) {
+            val factory = try {
+                if (!rawIterator.hasNext()) break
+                rawIterator.next()
+            } catch (_: Throwable) {
+                continue // skip unloadable provider — its min-version wouldn't match anyway
+            }
+            factories += factory
+        }
         require(factories.isNotEmpty()) {
             "No IrInjector.Factory found on classpath. Check that one of the " +
                 "`debuggable-compiler-compat-kXX` modules is on the runtime classpath."

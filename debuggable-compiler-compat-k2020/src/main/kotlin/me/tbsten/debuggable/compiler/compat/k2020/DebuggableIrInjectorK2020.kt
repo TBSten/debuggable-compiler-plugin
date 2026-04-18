@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
  * - `pluginContext.createDiagnosticReporter(pluginId)` instead of `pluginContext.messageCollector`
  * - `annotation.getValueArgument(index)` instead of `annotation.arguments[index]`
  */
-class DebuggableIrInjectorK20 : IrInjector {
+class DebuggableIrInjectorK2020 : IrInjector {
     override fun transform(
         moduleFragment: IrModuleFragment,
         pluginContext: IrPluginContext,
@@ -35,7 +35,7 @@ class DebuggableIrInjectorK20 : IrInjector {
     }
 
     class Factory : IrInjector.Factory {
-        override val minVersion: String = "2.0.0"
-        override fun create(): IrInjector = DebuggableIrInjectorK20()
+        override val minVersion: String = "2.0.20"
+        override fun create(): IrInjector = DebuggableIrInjectorK2020()
     }
 }
