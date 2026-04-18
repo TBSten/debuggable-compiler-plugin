@@ -8,7 +8,7 @@ import me.tbsten.debuggable.runtime.logging.DefaultDebugLogger
 import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
 
 /**
- * Starts a side-effect observation that logs each emission of this Flow via [debugLog].
+ * Starts a side-effect observation that logs each emission of this Flow via [logger].
  *
  * This function is **side-effect only**: it launches a coroutine in [registry]'s scope
  * and returns `this` unchanged. Collecting the returned Flow does NOT double-observe —

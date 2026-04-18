@@ -9,7 +9,7 @@ import me.tbsten.debuggable.runtime.logging.DefaultDebugLogger
 import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
 
 /**
- * Starts a side-effect observation that logs each change of this Compose [State] via [debugLog].
+ * Starts a side-effect observation that logs each change of this Compose [State] via [logger].
  *
  * Converts state changes to a Flow via [snapshotFlow], then behaves identically to
  * [debuggableFlow]: the observation runs in the background in [registry]'s scope and
