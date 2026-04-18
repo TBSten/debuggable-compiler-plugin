@@ -36,13 +36,20 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
+            // Use compileOnly so consumers choose their own Compose version.
+            // Without this, our published classfiles would drag the Compose runtime
+            // Kotlin plugin version (currently 1.10.3, metadata [2,1,0]) into every
+            // consumer, forcing their effective Compose upgrade and breaking builds
+            // on Kotlin 2.0 / 2.1 compilers that reject [2,1,0] metadata.
+            compileOnly(compose.runtime)
             implementation(libs.kotlinx.coroutines.core)
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
+            // Tests need compose.runtime at runtime since it's only compileOnly in main.
+            implementation(compose.runtime)
         }
 
         androidMain.dependencies {
