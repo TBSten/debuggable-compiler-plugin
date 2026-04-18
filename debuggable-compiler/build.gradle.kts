@@ -25,6 +25,13 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     compileOnly(libs.kotlin.compiler.embeddable)
 
+    // Abstract IR injection API + ServiceLoader discovery. Per-version
+    // implementations (`debuggable-compiler-compat-kXX`) are brought in as
+    // `runtimeOnly` so their bytecode stays out of compile-time resolution.
+    implementation(project(":debuggable-compiler-compat"))
+    runtimeOnly(project(":debuggable-compiler-compat-k23"))
+    runtimeOnly(project(":debuggable-compiler-compat-k21"))
+
     testImplementation(libs.kotlin.compiler.embeddable)
     testImplementation(libs.kctfork.core)
     testImplementation(kotlin("test"))

@@ -1,12 +1,12 @@
 @file:OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
 
-package me.tbsten.debuggable.compiler.visitors
+package me.tbsten.debuggable.compiler.compat.k23.visitors
 
-import me.tbsten.debuggable.compiler.DebuggableOptions
-import me.tbsten.debuggable.compiler.util.AnnotationFqNames
-import me.tbsten.debuggable.compiler.util.isDebuggableTarget
-import me.tbsten.debuggable.compiler.util.isFlow
-import me.tbsten.debuggable.compiler.util.isState
+import me.tbsten.debuggable.compiler.compat.IrInjector
+import me.tbsten.debuggable.compiler.compat.k23.util.AnnotationFqNames
+import me.tbsten.debuggable.compiler.compat.k23.util.isDebuggableTarget
+import me.tbsten.debuggable.compiler.compat.k23.util.isFlow
+import me.tbsten.debuggable.compiler.compat.k23.util.isState
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
@@ -56,7 +56,7 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
  */
 internal class LocalVariableTransformer(
     private val pluginContext: IrPluginContext,
-    private val options: DebuggableOptions = DebuggableOptions(
+    private val options: IrInjector.Options = IrInjector.Options(
         observeFlow = true,
         logAction = true,
     ),

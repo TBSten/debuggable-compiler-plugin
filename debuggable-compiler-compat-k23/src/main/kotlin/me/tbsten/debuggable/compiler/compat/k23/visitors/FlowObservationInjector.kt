@@ -1,6 +1,6 @@
 @file:OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
 
-package me.tbsten.debuggable.compiler.visitors
+package me.tbsten.debuggable.compiler.compat.k23.visitors
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -20,8 +20,8 @@ import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.IrTypeProjection
-import me.tbsten.debuggable.compiler.util.isFlow
-import me.tbsten.debuggable.compiler.util.isState
+import me.tbsten.debuggable.compiler.compat.k23.util.isFlow
+import me.tbsten.debuggable.compiler.compat.k23.util.isState
 
 internal fun injectFlowObservations(
     irClass: IrClass,

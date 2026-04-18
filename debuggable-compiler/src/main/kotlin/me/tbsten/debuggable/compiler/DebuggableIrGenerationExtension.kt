@@ -1,21 +1,40 @@
 package me.tbsten.debuggable.compiler
 
-import me.tbsten.debuggable.compiler.visitors.DebuggableClassTransformer
-import me.tbsten.debuggable.compiler.visitors.LocalVariableTransformer
+import me.tbsten.debuggable.compiler.compat.IrInjector
+import me.tbsten.debuggable.compiler.compat.IrInjectorLoader
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.util.patchDeclarationParents
-import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 
+/**
+ * Delegates the actual IR transformation to whichever [IrInjector] implementation
+ * `IrInjectorLoader` picks at runtime (based on the Kotlin compiler version on the
+ * classpath). The impl classes live in sibling `debuggable-compiler-compat-kXX`
+ * modules and are discovered via `ServiceLoader` of [IrInjector.Factory].
+ *
+ * Staying thin here means nothing in this class — or its transitive static
+ * classloading — references version-sensitive IR APIs, so the main plugin JAR can
+ * load cleanly on every supported Kotlin version even if the picked impl can't.
+ */
 class DebuggableIrGenerationExtension(
-    private val options: DebuggableOptions = DebuggableOptions(observeFlow = true, logAction = true),
+    private val options: DebuggableOptions = DebuggableOptions(
+        observeFlow = true,
+        logAction = true,
+        defaultLoggerFqn = "",
+    ),
 ) : IrGenerationExtension {
+
+    private val injector: IrInjector by lazy { IrInjectorLoader.load() }
+
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        moduleFragment.transformChildrenVoid(DebuggableClassTransformer(pluginContext, options))
-        if (options.observeFlow) {
-            moduleFragment.transformChildrenVoid(LocalVariableTransformer(pluginContext, options))
-        }
-        moduleFragment.patchDeclarationParents()
+        injector.transform(
+            moduleFragment,
+            pluginContext,
+            IrInjector.Options(
+                observeFlow = options.observeFlow,
+                logAction = options.logAction,
+                defaultLoggerFqn = options.defaultLoggerFqn,
+            ),
+        )
     }
 }

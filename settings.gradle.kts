@@ -33,5 +33,8 @@ dependencyResolutionManagement {
 }
 include(":debuggable-runtime")
 include(":debuggable-compiler")
+include(":debuggable-compiler-compat")
+include(":debuggable-compiler-compat-k23")
+include(":debuggable-compiler-compat-k21")
 include(":debuggable-gradle")
 

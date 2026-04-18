@@ -1,9 +1,9 @@
 @file:OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
 
-package me.tbsten.debuggable.compiler.visitors
+package me.tbsten.debuggable.compiler.compat.k23.visitors
 
-import me.tbsten.debuggable.compiler.DebuggableOptions
-import me.tbsten.debuggable.compiler.util.AnnotationFqNames
+import me.tbsten.debuggable.compiler.compat.IrInjector
+import me.tbsten.debuggable.compiler.compat.k23.util.AnnotationFqNames
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.defaultType
-import me.tbsten.debuggable.compiler.compat.getAnnotationCompat
+import me.tbsten.debuggable.compiler.compat.k23.getAnnotationCompat
 
 /**
  * Resolves the DebugLogger to pass as the `logger` argument of `debuggableFlow` /
@@ -27,7 +27,7 @@ import me.tbsten.debuggable.compiler.compat.getAnnotationCompat
  */
 internal class LoggerResolver(
     private val symbolProvider: SymbolProvider,
-    private val options: DebuggableOptions,
+    private val options: IrInjector.Options,
     private val pluginContext: IrPluginContext? = null,
 ) {
     fun resolve(owningClass: IrClass?): IrExpression {

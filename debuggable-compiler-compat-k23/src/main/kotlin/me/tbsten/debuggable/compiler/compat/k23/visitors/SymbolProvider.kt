@@ -1,4 +1,4 @@
-package me.tbsten.debuggable.compiler.visitors
+package me.tbsten.debuggable.compiler.compat.k23.visitors
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol

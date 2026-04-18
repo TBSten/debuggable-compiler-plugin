@@ -1,4 +1,4 @@
-package me.tbsten.debuggable.compiler.util
+package me.tbsten.debuggable.compiler.compat.k23.util
 
 import org.jetbrains.kotlin.name.FqName
 
