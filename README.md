@@ -187,46 +187,49 @@ Each sample README explains how to run it, what to click, and where in the sourc
 
 ## 🧷 Supported Kotlin Versions
 
-The plugin targets **Kotlin 2.2.20+** as its stable support line. Verified via the
-`integration-test/cmp` smoke matrix:
+Every Kotlin 2.0+ stable patch through the latest beta is supported. Verified end-to-end
+by `scripts/smoke-test-all.sh` (integration build of `integration-test/cmp` with each
+target compiler) and `scripts/test-all.sh` (`:debuggable-compiler:test` under the
+matching `kctfork`):
 
 | Kotlin version | Status |
 |:---|:---|
 | 2.4.0-Beta1 | ✅ Verified |
 | 2.3.21-RC2  | ✅ Verified |
-| 2.3.20      | ✅ Verified (pinned baseline) |
+| 2.3.20      | ✅ Verified (pinned build) |
 | 2.3.10      | ✅ Verified |
 | 2.3.0       | ✅ Verified |
 | 2.2.21      | ✅ Verified |
 | 2.2.20      | ✅ Verified |
 | 2.2.10      | ✅ Verified |
 | 2.2.0       | ✅ Verified |
-| 2.0 / 2.1   | ⚠️ Not supported — see note below |
-
-### Why not 2.0 / 2.1?
-
-`debuggable-runtime` depends transitively on `kotlinx-coroutines-core:1.10.x` which carries
-Kotlin metadata `[2.1.0]`. Older compilers (2.0.x / 2.1.x) reject classes with newer metadata,
-and the 2.1.21 compiler additionally hits an `FirIncompatibleClassExpressionChecker` bug when
-reporting that incompatibility. Dropping to an older coroutines version or publishing
-per-compiler-version runtime artifacts would be a larger effort — tracked as an open issue
-in `.local/tickets/002-runtime-binary-compat-2.0-2.1.md` inside the repo.
+| 2.1.21      | ✅ Verified |
+| 2.1.20      | ✅ Verified |
+| 2.1.10      | ✅ Verified |
+| 2.1.0       | ✅ Verified |
+| 2.0.21      | ✅ Verified |
+| 2.0.20      | ✅ Verified |
+| 2.0.10      | ✅ Verified |
+| 2.0.0       | ✅ Verified |
 
 ### How multi-version works internally
 
-The plugin's JAR is compiled against `kotlin-compiler-embeddable:2.3.20`, but two light
-reflection helpers absorb the API differences so the same JAR loads cleanly in 2.2.20
-through 2.4.0-Beta1:
+The IR transformation logic lives in a metro-style per-Kotlin-version compat layer so a
+single plugin artifact can dispatch to whichever implementation matches the consumer's
+Kotlin compiler:
 
-- `registerExtensionCompat` (`debuggable-compiler/src/main/kotlin/.../compat/ExtensionRegistration.kt`)
-  — Kotlin 2.4 moved `FirExtensionRegistrarAdapter.Companion` / `IrGenerationExtension.Companion`
-  from `ProjectExtensionDescriptor` to `ExtensionPointDescriptor`. The helper finds the
-  appropriate `ExtensionStorage.registerExtension(descriptor, extension)` overload at runtime.
-- `getAnnotationCompat` (`.../compat/AnnotationLookup.kt`) — Kotlin 2.4 changed
-  `IrUtilsKt.getAnnotation` return type from `IrConstructorCall?` to `IrAnnotation?`. The
-  helper iterates `annotations` manually with only API-stable types, avoiding the renamed
-  static method dispatch.
+| Module | `minVersion` | Target compiler | Notes |
+|:---|:---|:---|:---|
+| `debuggable-compiler-compat-k2000` | 2.0.0  | 2.0.10 | Pre-`builders.kt` split; `createDiagnosticReporter` still returns `IrMessageLogger` |
+| `debuggable-compiler-compat-k2020` | 2.0.20 | 2.0.21 | 2.1.20 未満 IR API (`putValueArgument` / `extensionReceiver=` / `valueParameters`) |
+| `debuggable-compiler-compat-k21`   | 2.1.20 | 2.1.21 | New arg/receiver APIs, but `irCall` etc. still on `IrBuilderWithScope` |
+| `debuggable-compiler-compat-k23`   | 2.2.0  | 2.3.20 | `irCall` on `IrBuilder`; new `arguments[param]=` API is the only one used |
 
-Fine-grained unit tests (`debuggable-compiler/src/test/kotlin/...`) are pinned to the plugin's
-build Kotlin via `kctfork`, while cross-version correctness is validated by
-`scripts/smoke-test-all.sh` — see `.github/workflows/ci.yml` for the CI matrix.
+At runtime, `IrInjectorLoader` (in `debuggable-compiler-compat/`) enumerates
+`IrInjector.Factory` via `ServiceLoader`, skips any factories whose classes can't be
+linked on the current runtime (e.g. `k23` fails on 2.0.x because `IrBuilder.irCall`
+doesn't exist there), and picks the highest `minVersion` that is still `≤` the running
+compiler. 2.4.0-Beta1 goes through a reflection-only helper for the `FirExtensionRegistrarAdapter`
+/ `getAnnotation` signature drift, which is narrow enough to live inside `compat-k23`.
+
+See `.github/workflows/ci.yml` for the 17-version CI matrix.

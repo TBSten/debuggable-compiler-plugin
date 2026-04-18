@@ -16,47 +16,50 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  # Layer A: kctfork-based fine-grained tests against the pinned Kotlin version (2.3.20).
-  unit:
-    name: 'unit (kctfork @ pinned)'
+  # Runtime KMP tests + kctfork unit tests pinned to the project's Kotlin version.
+  # Fastest path — everything in-process, single Kotlin.
+  unit-pinned:
+    name: 'unit (pinned Kotlin)'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Run compiler unit tests
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run compiler unit tests (pinned)
         run: ./gradlew :debuggable-compiler:test --no-daemon
-
       - name: Run runtime jvm tests
         run: ./gradlew :debuggable-runtime:jvmTest --no-daemon
-
       - name: Upload reports on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: reports-unit
+          name: reports-unit-pinned
           path: '**/build/reports/**'
 
-  # Layer B: integration-test/cmp smoke test per target Kotlin version.
-  # Confirms the plugin JAR (compiled with the pinned Kotlin) loads and injects bytecode
-  # correctly when consumed by each target Kotlin compiler.
-  integration:
-    name: 'integration / kotlin-${{ matrix.kotlin }}'
+  # kctfork-based fine-grained tests per Kotlin compiler version.
+  # Swaps both `kotlin-compiler-embeddable` and `kctfork` to match each target.
+  # Versions without a published kctfork release fall back to the closest
+  # compatible one — any real incompatibility surfaces as a test failure.
+  unit-matrix:
+    name: 'unit / kotlin-${{ matrix.kotlin }}'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         kotlin:
+          - '2.0.0'
+          - '2.0.10'
+          - '2.0.20'
+          - '2.0.21'
+          - '2.1.0'
+          - '2.1.10'
+          - '2.1.20'
+          - '2.1.21'
           - '2.2.0'
           - '2.2.10'
           - '2.2.20'
@@ -68,19 +71,56 @@ jobs:
           - '2.4.0-Beta1'
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run :debuggable-compiler:test for Kotlin ${{ matrix.kotlin }}
+        run: ./gradlew :debuggable-compiler:test -Ptest.kotlin=${{ matrix.kotlin }} --no-daemon
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-unit-${{ matrix.kotlin }}
+          path: '**/build/reports/**'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
+  # End-to-end smoke: build integration-test/cmp with each target Kotlin and
+  # verify the injected bytecode symbols are present.
+  integration:
+    name: 'integration / kotlin-${{ matrix.kotlin }}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        kotlin:
+          - '2.0.0'
+          - '2.0.10'
+          - '2.0.20'
+          - '2.0.21'
+          - '2.1.0'
+          - '2.1.10'
+          - '2.1.20'
+          - '2.1.21'
+          - '2.2.0'
+          - '2.2.10'
+          - '2.2.20'
+          - '2.2.21'
+          - '2.3.0'
+          - '2.3.10'
+          - '2.3.20'
+          - '2.3.21-RC2'
+          - '2.4.0-Beta1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
       - name: Run smoke test for Kotlin ${{ matrix.kotlin }}
         run: ./scripts/smoke-test.sh ${{ matrix.kotlin }}
-
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -90,11 +130,11 @@ jobs:
             .local/tmp/smoke-*kotlin-${{ matrix.kotlin }}*.log
             **/build/reports/**
 
-  # Fan-in job for branch protection — stays green only if both unit and integration pass.
+  # Fan-in check for branch protection.
   final:
     if: always()
     runs-on: ubuntu-latest
-    needs: [unit, integration]
+    needs: [unit-pinned, unit-matrix, integration]
     steps:
       - name: Check all results
         run: |
