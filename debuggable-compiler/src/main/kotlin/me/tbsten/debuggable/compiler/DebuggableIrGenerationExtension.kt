@@ -1,6 +1,7 @@
 package me.tbsten.debuggable.compiler
 
 import me.tbsten.debuggable.compiler.visitors.DebuggableClassTransformer
+import me.tbsten.debuggable.compiler.visitors.LocalVariableTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
@@ -12,6 +13,9 @@ class DebuggableIrGenerationExtension(
 ) : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         moduleFragment.transformChildrenVoid(DebuggableClassTransformer(pluginContext, options))
+        if (options.observeFlow) {
+            moduleFragment.transformChildrenVoid(LocalVariableTransformer(pluginContext))
+        }
         moduleFragment.patchDeclarationParents()
     }
 }
