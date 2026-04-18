@@ -1,16 +1,24 @@
 package me.tbsten.debuggable.compiler.compat.k21
 
 import me.tbsten.debuggable.compiler.compat.IrInjector
+import me.tbsten.debuggable.compiler.compat.k21.visitors.DebuggableClassTransformer
+import me.tbsten.debuggable.compiler.compat.k21.visitors.LocalVariableTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.util.patchDeclarationParents
+import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 
 /**
- * Kotlin 2.1.20 – 2.1.21 implementation of the Debuggable IR transformation.
+ * [IrInjector] implementation for Kotlin 2.1.20 – 2.1.21. Compiled against
+ * `kotlin-compiler-embeddable:2.1.21`, so IR-builder helpers like `irCall` / `irString`
+ * emit bytecode that references the `IrBuilderWithScope` receiver type used by
+ * those Kotlin releases. Kotlin 2.2.0 demoted those helpers onto `IrBuilder`, so
+ * that range is covered by the `k23` impl instead.
  *
- * TODO: port the full visitor suite from `debuggable-compiler-compat-k23` and adapt it
- * to the 2.1.x API surface (notably the old `IrBuilderWithScope.irCall / irString / …`
- * overloads that 2.2.0 demoted to `IrBuilder`). Until then this is a stub that throws
- * if it is ever picked by [me.tbsten.debuggable.compiler.compat.IrInjectorLoader].
+ * Apart from the receiver types baked into the bytecode, the source is identical to
+ * `debuggable-compiler-compat-k23` — the new `arguments[param] = expr`,
+ * `insertExtensionReceiver` / `insertDispatchReceiver`, and `pluginContext.messageCollector`
+ * APIs were all introduced in 2.1.20.
  */
 class DebuggableIrInjectorK21 : IrInjector {
     override fun transform(
@@ -18,10 +26,11 @@ class DebuggableIrInjectorK21 : IrInjector {
         pluginContext: IrPluginContext,
         options: IrInjector.Options,
     ) {
-        throw NotImplementedError(
-            "debuggable-compiler-compat-k21 has not been implemented yet. " +
-                "Only Kotlin 2.2.0 and later are currently supported.",
-        )
+        moduleFragment.transformChildrenVoid(DebuggableClassTransformer(pluginContext, options))
+        if (options.observeFlow) {
+            moduleFragment.transformChildrenVoid(LocalVariableTransformer(pluginContext, options))
+        }
+        moduleFragment.patchDeclarationParents()
     }
 
     class Factory : IrInjector.Factory {
