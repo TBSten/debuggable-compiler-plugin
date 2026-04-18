@@ -62,6 +62,67 @@ class ComplexViewModel : ViewModel() {
 }
 ```
 
+### 4. Replacing the Logger
+
+By default, `@Debuggable` prints lines to stdout with a `[Debuggable]` prefix. You can route logs to Android Logcat, Timber, a file, or a test collector using any of three mechanisms (higher wins):
+
+| Priority | Mechanism | Scope |
+| :--- | :--- | :--- |
+| 1 | `@Debuggable(logger = MyLogger::class)` | The annotated class / variable |
+| 2 | Gradle DSL `debuggable { defaultLogger.set("FQN") }` | The entire module (compile-time) |
+| 3 | `DefaultDebugLogger.current = DebugLogger { ... }` | The entire process (runtime) |
+| 4 | `DebugLogger.Stdout` (built-in fallback) | — |
+
+All logger targets must be singleton `object` declarations that implement `DebugLogger`.
+
+```kotlin
+import me.tbsten.debuggable.runtime.logging.*
+
+// (1) Per-class override
+object AuthLogger : DebugLogger {
+    override fun log(message: String) = Log.d("Auth", message)
+}
+
+@Debuggable(isSingleton = true, logger = AuthLogger::class)
+object AuthStore { /* ... */ }
+
+// (2) Module-wide (Gradle DSL) — see section 5.
+// (3) Process-wide runtime swap — set once during app startup:
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        DefaultDebugLogger.current = AndroidLogcatLogger    // built-in
+    }
+}
+```
+
+**Built-in loggers** shipped in `debuggable-runtime`:
+
+| Logger | Source set | Description |
+| :--- | :--- | :--- |
+| `DebugLogger.Stdout` | commonMain | The default `println("[Debuggable] ...")` sink. |
+| `SilentLogger` | commonMain | No-op sink. Silences logs while keeping the plugin enabled. |
+| `PrefixedLogger(prefix, delegate)` | commonMain | Prepends a prefix and forwards to another `DebugLogger`. |
+| `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)`. Default tag is `"Debuggable"`. |
+
+### 5. Gradle DSL Configuration
+
+The Gradle plugin exposes per-feature toggles and a compile-time default logger so individual aspects can be disabled or redirected without runtime setup.
+
+```kotlin
+debuggable {
+    enabled.set(true)          // master switch (default: true)
+    observeFlow.set(true)      // wrap Flow/State initializers (default: true)
+    logAction.set(true)        // log public method calls (default: true)
+    defaultLogger.set("")      // FQN of a DebugLogger object to use as the module-wide
+                               // default (empty = DefaultDebugLogger, which can still be
+                               // replaced at runtime). Example:
+                               // defaultLogger.set("com.example.myapp.MyDebugLogger")
+}
+```
+
+When `enabled = false`, the plugin is a complete no-op — no IR transformations, no runtime dependency surfaces in the output binary. When `observeFlow` or `logAction` is individually disabled, only that transformation is skipped.
+
 ---
 
 ## 🏗 Internal IR Transformation
@@ -96,19 +157,6 @@ If `@FocusDebuggable` or similar is applied to a type other than these, a warnin
 
 ### 4. Zero Overhead in Release Builds
 When `enabled.set(false)` is configured on the Gradle plugin side (the default for Release builds), the KCP performs no IR transformations. No debugging code or Runtime library dependencies remain in the production binary, so there is zero performance impact.
-
-### 5. Gradle DSL
-The Gradle plugin exposes per-feature toggles so individual instrumentation aspects can be disabled without dropping the plugin entirely.
-
-```kotlin
-debuggable {
-    enabled.set(true)        // master switch (default: true)
-    observeFlow.set(true)    // wrap Flow/State initializers (default: true)
-    logAction.set(true)      // log public method calls (default: true)
-}
-```
-
-When `enabled = false`, the plugin is a complete no-op. When `observeFlow` or `logAction` is individually disabled, that specific transformation is skipped while others still run.
 
 ---
 

@@ -26,7 +26,7 @@ cd integration-test/cmp
 ./gradlew run
 ```
 
-A window opens with a counter. Click `+1`, `-1`, or `Change label` — each state change prints a `[Debuggable]` log line to the terminal. Method calls are also logged.
+A window opens with a counter. Click `+1`, `-1`, or `Next label` — each state change prints a `[Debuggable]` log line to the terminal. Method calls are also logged.
 
 ### Main code
 

@@ -62,6 +62,70 @@ class ComplexViewModel : ViewModel() {
 }
 ```
 
+### 4. ロガーの差し替え
+
+デフォルトでは `@Debuggable` は `[Debuggable]` プレフィックス付きで標準出力にログを出します。
+Android Logcat、Timber、ファイル出力、テスト収集など任意の出力先に切り替えられます。
+指定方法は 3 つあり、上位が優先されます。
+
+| 優先度 | 指定方法 | 適用範囲 |
+| :--- | :--- | :--- |
+| 1 | `@Debuggable(logger = MyLogger::class)` | アノテーションを付けたクラス / 変数 |
+| 2 | Gradle DSL `debuggable { defaultLogger.set("FQN") }` | モジュール全体 (コンパイル時固定) |
+| 3 | `DefaultDebugLogger.current = DebugLogger { ... }` | プロセス全体 (ランタイム差し替え) |
+| 4 | `DebugLogger.Stdout` (組み込みのフォールバック) | — |
+
+ロガーに渡せるのは `DebugLogger` を実装した `object` 宣言に限られます。
+
+```kotlin
+import me.tbsten.debuggable.runtime.logging.*
+
+// (1) 特定クラスだけ別ロガーに流す
+object AuthLogger : DebugLogger {
+    override fun log(message: String) = Log.d("Auth", message)
+}
+
+@Debuggable(isSingleton = true, logger = AuthLogger::class)
+object AuthStore { /* ... */ }
+
+// (2) モジュール全体を Gradle DSL で指定 — セクション 5 参照
+// (3) アプリ起動時にプロセス全体を差し替える
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        DefaultDebugLogger.current = AndroidLogcatLogger   // 組み込みロガー
+    }
+}
+```
+
+**組み込みロガー** (`debuggable-runtime` に同梱):
+
+| ロガー | ソースセット | 説明 |
+| :--- | :--- | :--- |
+| `DebugLogger.Stdout` | commonMain | デフォルトの `println("[Debuggable] ...")` 出力 |
+| `SilentLogger` | commonMain | 何も出力しない sink。プラグインを無効化せず出力だけ止めたい場合に |
+| `PrefixedLogger(prefix, delegate)` | commonMain | プレフィックスを追加して別の `DebugLogger` に委譲 |
+| `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)` に流す。デフォルトタグは `"Debuggable"` |
+
+### 5. Gradle DSL の設定
+
+Gradle プラグインは機能単位のトグルとコンパイル時デフォルトロガーを提供し、プラグイン全体を
+無効化せず特定の計測を個別に OFF / 差し替えできます。
+
+```kotlin
+debuggable {
+    enabled.set(true)          // マスタースイッチ（デフォルト: true）
+    observeFlow.set(true)      // Flow/State イニシャライザのラップ（デフォルト: true）
+    logAction.set(true)        // public メソッド呼び出しのログ（デフォルト: true）
+    defaultLogger.set("")      // モジュール全体の default として使う DebugLogger object の FQN
+                               // (空文字 = DefaultDebugLogger。その場合はランタイムで差し替え可能)
+                               // 例: defaultLogger.set("com.example.myapp.MyDebugLogger")
+}
+```
+
+`enabled = false` の場合プラグインは完全な no-op になり、IR 変換も行わず Runtime 依存も残りません。
+`observeFlow` / `logAction` を個別に無効化すると、その変換だけがスキップされ他の機能はそのまま動作します。
+
 ---
 
 ## 🏗 内部メカニズム (Internal IR Transformation)
@@ -95,19 +159,6 @@ val uiState = mutableStateOf(UiState()).also {
 
 ### 4. リリース時のゼロ・オーバーヘッド
 Gradleプラグイン側で `enabled.set(false)` に設定されている場合（デフォルトでは Release ビルド）、KCP は IR 変換を一切行いません。本番環境のバイナリにはデバッグ用のコードや Runtime ライブラリの依存が一切残らないため、パフォーマンスへの影響はありません。
-
-### 5. Gradle DSL
-Gradle プラグインは機能単位のトグルを提供しており、プラグイン全体を無効化せず特定の計測だけを個別に OFF にできます。
-
-```kotlin
-debuggable {
-    enabled.set(true)        // マスタースイッチ（デフォルト: true）
-    observeFlow.set(true)    // Flow/State イニシャライザのラップ（デフォルト: true）
-    logAction.set(true)      // public メソッド呼び出しのログ（デフォルト: true）
-}
-```
-
-`enabled = false` の場合プラグインは完全な no-op になります。`observeFlow` と `logAction` を個別に無効化すると、その変換だけがスキップされ他の機能はそのまま動作します。
 
 ---
 
