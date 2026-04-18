@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetField
 import org.jetbrains.kotlin.ir.builders.irTry
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOriginImpl
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
@@ -29,6 +29,17 @@ import org.jetbrains.kotlin.name.Name
 
 private const val CLOSE_METHOD_NAME = "close"
 
+/**
+ * Canonical `DEFINED` origin, instantiated directly instead of going through
+ * `IrDeclarationOrigin.Companion.DEFINED`. The companion layout changed in a binary-
+ * incompatible way in Kotlin 2.3.20 (commit `3494003c1d`), so reading
+ * `DEFINED` via the companion fails to link at runtime on either side of that boundary
+ * (depending on which version we were compiled against). Instantiating
+ * [IrDeclarationOriginImpl] directly skips the broken accessor entirely — origin
+ * equality is name-based, so any canonical `DEFINED` we compare against still matches.
+ */
+private val DefinedOrigin = IrDeclarationOriginImpl("DEFINED")
+
 internal fun addRegistryProperty(
     irClass: IrClass,
     symbolProvider: SymbolProvider,
@@ -39,7 +50,7 @@ internal fun addRegistryProperty(
     val field = pluginContext.irFactory.buildField {
         startOffset = UNDEFINED_OFFSET
         endOffset = UNDEFINED_OFFSET
-        origin = IrDeclarationOrigin.DEFINED
+        origin = DefinedOrigin
         name = Name.identifier("\$\$debuggable_registry")
         type = registryType
         visibility = DescriptorVisibilities.PRIVATE
@@ -53,7 +64,7 @@ internal fun addRegistryProperty(
     val property = pluginContext.irFactory.buildProperty {
         startOffset = UNDEFINED_OFFSET
         endOffset = UNDEFINED_OFFSET
-        origin = IrDeclarationOrigin.DEFINED
+        origin = DefinedOrigin
         name = Name.identifier("\$\$debuggable_registry")
         visibility = DescriptorVisibilities.PRIVATE
         modality = Modality.FINAL

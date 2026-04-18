@@ -34,9 +34,11 @@ buildConfig {
 dependencies {
     api(project(":debuggable-compiler-compat"))
     implementation(libs.kotlin.stdlib)
-    // This impl is compiled against Kotlin 2.3.20's compiler API. The same bytecode is
-    // also loaded at runtime on 2.2.x because those versions retain the APIs used here.
-    compileOnly(libs.kotlin.compiler.embeddable)
+    // Pinned to 2.2.0 (this impl's minVersion) so the resulting bytecode only references
+    // symbols that already existed in 2.2.0 — e.g. the pre-2.3.20 `IrDeclarationOrigin`
+    // companion layout (see KT commit `3494003c1d`, which renamed the companion accessor
+    // and would otherwise link-fail on 2.2.0 – 2.3.10 runtimes).
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.0")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irGetField
 import org.jetbrains.kotlin.ir.builders.irTry
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOriginImpl
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -28,6 +28,9 @@ import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.name.Name
 
 private const val CLOSE_METHOD_NAME = "close"
+
+/** See k23's `RegistryInjector.DefinedOrigin` for the rationale — same trick applies here. */
+private val DefinedOrigin = IrDeclarationOriginImpl("DEFINED")
 
 internal fun addRegistryProperty(
     irClass: IrClass,
@@ -39,7 +42,7 @@ internal fun addRegistryProperty(
     val field = pluginContext.irFactory.buildField {
         startOffset = UNDEFINED_OFFSET
         endOffset = UNDEFINED_OFFSET
-        origin = IrDeclarationOrigin.DEFINED
+        origin = DefinedOrigin
         name = Name.identifier("\$\$debuggable_registry")
         type = registryType
         visibility = DescriptorVisibilities.PRIVATE
@@ -53,7 +56,7 @@ internal fun addRegistryProperty(
     val property = pluginContext.irFactory.buildProperty {
         startOffset = UNDEFINED_OFFSET
         endOffset = UNDEFINED_OFFSET
-        origin = IrDeclarationOrigin.DEFINED
+        origin = DefinedOrigin
         name = Name.identifier("\$\$debuggable_registry")
         visibility = DescriptorVisibilities.PRIVATE
         modality = Modality.FINAL
