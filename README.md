@@ -195,7 +195,12 @@ The plugin targets **Kotlin 2.2.20+** as its stable support line. Verified via t
 | 2.4.0-Beta1 | ✅ Verified |
 | 2.3.21-RC2  | ✅ Verified |
 | 2.3.20      | ✅ Verified (pinned baseline) |
+| 2.3.10      | ✅ Verified |
+| 2.3.0       | ✅ Verified |
+| 2.2.21      | ✅ Verified |
 | 2.2.20      | ✅ Verified |
+| 2.2.10      | ✅ Verified |
+| 2.2.0       | ✅ Verified |
 | 2.0 / 2.1   | ⚠️ Not supported — see note below |
 
 ### Why not 2.0 / 2.1?
