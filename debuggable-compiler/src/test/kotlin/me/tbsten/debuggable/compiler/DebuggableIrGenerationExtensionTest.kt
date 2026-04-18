@@ -1,21 +1,15 @@
 package me.tbsten.debuggable.compiler
 
-import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.SourceFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DebuggableIrGenerationExtensionTest {
-
-    private fun compile(source: String): JvmCompilationResult {
-        return KotlinCompilation().apply {
-            sources = listOf(SourceFile.kotlin("Main.kt", source))
-            compilerPluginRegistrars = listOf(DebuggableCompilerPluginRegistrar())
-            inheritClassPath = true
-            messageOutputStream = System.out
-        }.compile()
-    }
+/**
+ * Sanity tests that the plugin is installable and doesn't crash on source that has nothing
+ * to do with `@Debuggable`. Shares `CompilerTestBase.compile` so classpath filtering and
+ * kctfork workarounds (see [CompilerTestBase]) apply here too.
+ */
+class DebuggableIrGenerationExtensionTest : CompilerTestBase() {
 
     @Test
     fun `plugin does not break compilation of plain code`() {

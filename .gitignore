@@ -19,3 +19,4 @@ Pods/
 .local/
 
 .claude/*.local.*
+.claude/scheduled_tasks.lock

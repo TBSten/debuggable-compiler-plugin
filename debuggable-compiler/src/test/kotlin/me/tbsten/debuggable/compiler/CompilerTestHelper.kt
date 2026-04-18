@@ -7,6 +7,7 @@ import com.tschuchort.compiletesting.SourceFile
 import me.tbsten.debuggable.runtime.logging.DebugLogger
 import me.tbsten.debuggable.runtime.logging.DefaultDebugLogger
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.PrintStream
 import kotlin.test.BeforeTest
 
@@ -68,9 +69,46 @@ abstract class CompilerTestBase {
                 PluginOption(BuildConfig.PLUGIN_ID, "logAction", logAction.toString()),
                 PluginOption(BuildConfig.PLUGIN_ID, "defaultLogger", defaultLogger),
             )
-            inheritClassPath = true
+            // The plugin-side `debuggable-compiler-compat-k*` jars need to be on the test
+            // JVM's classpath (so `IrInjectorLoader` can ServiceLoader-discover a factory),
+            // but they MUST NOT land on the user code compilation classpath. Each compat
+            // impl carries `@Metadata(mv=[2,2,0] / [2,1,0] / [2,0,0])`, and an older
+            // `kotlin-compiler-embeddable` will reject any whose metadata exceeds its own.
+            // Rather than `inheritClassPath = true`, feed only what user code should see.
+            classpaths = userCodeClasspath()
             messageOutputStream = System.out
+            // kctfork 0.12.1 writes `args.optIn = optIn?.toTypedArray()` — null on the default
+            // empty list, which trips `CommonCompilerArguments.setOptIn`'s non-null parameter
+            // check introduced in Kotlin 2.4.0-Beta1. Pre-populate with an empty list so
+            // `?.toTypedArray()` yields a non-null empty array.
+            optIn = emptyList()
         }.compile()
+
+    /**
+     * Build the classpath the **user code** under test needs: stdlib, `debuggable-runtime`,
+     * coroutines, Compose runtime, kotlin-test. Take the test JVM's full classpath and drop
+     * anything we know only the plugin / compat layer / test harness should see. Using the
+     * harness's own classloader keeps this version-agnostic — whichever stdlib/kotlinx jars
+     * Gradle wired into `testImplementation` flow through unchanged.
+     */
+    private fun userCodeClasspath(): List<File> {
+        val jvmClasspath = System.getProperty("java.class.path")
+            .split(File.pathSeparator)
+            .map(::File)
+        return jvmClasspath.filter { entry ->
+            val name = entry.name
+            // Drop every compat jar — their metadata level can exceed the test compiler's.
+            // Drop the main plugin jar and its own build output — user code doesn't need the
+            // plugin's bytecode on its classpath; the plugin is wired in via `compilerPluginRegistrars`.
+            !name.startsWith("debuggable-compiler-compat") &&
+                !name.startsWith("debuggable-compiler-0") &&
+                entry.absolutePath.let { path ->
+                    "/debuggable-compiler/build/" !in path &&
+                        "/debuggable-compiler-compat" !in path &&
+                        "/build/classes/kotlin/test" !in path
+                }
+        }
+    }
 
     protected fun captureSystemOut(block: () -> Unit): String {
         val baos = ByteArrayOutputStream()
