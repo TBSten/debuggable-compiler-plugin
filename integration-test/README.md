@@ -17,6 +17,29 @@ This publishes:
 
 Re-run after any change to the plugin or runtime.
 
+## Multi-Kotlin-version testing
+
+Both samples accept a `-Pintegration.kotlin=<version>` property to swap the Kotlin toolchain.
+The Compose Multiplatform plugin version is mapped automatically in
+`cmp/settings.gradle.kts` based on the chosen Kotlin version; override with
+`-Pintegration.compose=<version>` or `-Pintegration.agp=<version>` (Android) if needed.
+
+```bash
+# From repo root — run the full smoke matrix for all supported Kotlin versions
+./scripts/smoke-test-all.sh
+
+# Or a single version
+./scripts/smoke-test.sh 2.2.20
+
+# Manually from inside a sample
+cd integration-test/cmp
+./gradlew build -Pintegration.kotlin=2.4.0-Beta1
+```
+
+`scripts/smoke-test.sh` publishes the plugin to `mavenLocal()`, builds the CMP sample with
+the target Kotlin, and uses `javap` to assert the injected symbols (`debuggableFlow`,
+`logAction`) are present in the output bytecode.
+
 ## Compose Multiplatform Desktop (`cmp/`)
 
 Launch the desktop app:

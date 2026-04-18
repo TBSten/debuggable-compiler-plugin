@@ -182,3 +182,46 @@ This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradl
 | [`integration-test/android`](integration-test/android) | Android app | `@Debuggable class : ViewModel(), AutoCloseable` | [android/README.md](integration-test/android/README.md) |
 
 Each sample README explains how to run it, what to click, and where in the source the `@Debuggable` annotation is applied. See [`integration-test/README.md`](integration-test/README.md) for a side-by-side summary.
+
+---
+
+## 🧷 Supported Kotlin Versions
+
+The plugin targets **Kotlin 2.2.20+** as its stable support line. Verified via the
+`integration-test/cmp` smoke matrix:
+
+| Kotlin version | Status |
+|:---|:---|
+| 2.4.0-Beta1 | ✅ Verified |
+| 2.3.21-RC2  | ✅ Verified |
+| 2.3.20      | ✅ Verified (pinned baseline) |
+| 2.2.20      | ✅ Verified |
+| 2.0 / 2.1   | ⚠️ Not supported — see note below |
+
+### Why not 2.0 / 2.1?
+
+`debuggable-runtime` depends transitively on `kotlinx-coroutines-core:1.10.x` which carries
+Kotlin metadata `[2.1.0]`. Older compilers (2.0.x / 2.1.x) reject classes with newer metadata,
+and the 2.1.21 compiler additionally hits an `FirIncompatibleClassExpressionChecker` bug when
+reporting that incompatibility. Dropping to an older coroutines version or publishing
+per-compiler-version runtime artifacts would be a larger effort — tracked as an open issue
+in `.local/tickets/002-runtime-binary-compat-2.0-2.1.md` inside the repo.
+
+### How multi-version works internally
+
+The plugin's JAR is compiled against `kotlin-compiler-embeddable:2.3.20`, but two light
+reflection helpers absorb the API differences so the same JAR loads cleanly in 2.2.20
+through 2.4.0-Beta1:
+
+- `registerExtensionCompat` (`debuggable-compiler/src/main/kotlin/.../compat/ExtensionRegistration.kt`)
+  — Kotlin 2.4 moved `FirExtensionRegistrarAdapter.Companion` / `IrGenerationExtension.Companion`
+  from `ProjectExtensionDescriptor` to `ExtensionPointDescriptor`. The helper finds the
+  appropriate `ExtensionStorage.registerExtension(descriptor, extension)` overload at runtime.
+- `getAnnotationCompat` (`.../compat/AnnotationLookup.kt`) — Kotlin 2.4 changed
+  `IrUtilsKt.getAnnotation` return type from `IrConstructorCall?` to `IrAnnotation?`. The
+  helper iterates `annotations` manually with only API-stable types, avoiding the renamed
+  static method dispatch.
+
+Fine-grained unit tests (`debuggable-compiler/src/test/kotlin/...`) are pinned to the plugin's
+build Kotlin via `kctfork`, while cross-version correctness is validated by
+`scripts/smoke-test-all.sh` — see `.github/workflows/ci.yml` for the CI matrix.
