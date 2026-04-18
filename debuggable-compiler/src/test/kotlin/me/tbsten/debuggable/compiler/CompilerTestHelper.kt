@@ -4,6 +4,8 @@ import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.PluginOption
 import com.tschuchort.compiletesting.SourceFile
+import me.tbsten.debuggable.runtime.logging.DebugLogger
+import me.tbsten.debuggable.runtime.logging.DefaultDebugLogger
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.BeforeTest
@@ -25,6 +27,13 @@ abstract class CompilerTestBase {
             resetMethod.isAccessible = true
             resetMethod.invoke(instance)
         }
+    }
+
+    @BeforeTest
+    fun resetDefaultDebugLogger() {
+        // DefaultDebugLogger.current is JVM-global. Reset to Stdout between tests so
+        // a test that installs a custom logger does not leak into the next test.
+        DefaultDebugLogger.current = DebugLogger.Stdout
     }
 
     protected fun compile(
