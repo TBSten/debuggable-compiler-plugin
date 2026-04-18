@@ -2,6 +2,7 @@
 
 package me.tbsten.debuggable.compiler.visitors
 
+import me.tbsten.debuggable.compiler.DebuggableOptions
 import me.tbsten.debuggable.compiler.util.AnnotationFqNames
 import me.tbsten.debuggable.compiler.util.isDebuggableTarget
 import me.tbsten.debuggable.compiler.util.isFlow
@@ -24,6 +25,7 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 
 internal class DebuggableClassTransformer(
     private val pluginContext: IrPluginContext,
+    private val options: DebuggableOptions = DebuggableOptions(observeFlow = true, logAction = true),
 ) : IrElementTransformerVoid() {
 
     private val symbolProvider = SymbolProvider(pluginContext)
@@ -32,6 +34,28 @@ internal class DebuggableClassTransformer(
     override fun visitClass(declaration: IrClass) = super.visitClass(declaration).also {
         if (declaration.hasAnnotation(AnnotationFqNames.DEBUGGABLE)) {
             transformDebuggableClass(declaration)
+        } else {
+            warnStrayFocusIgnoreAnnotations(declaration)
+        }
+    }
+
+    private fun warnStrayFocusIgnoreAnnotations(irClass: IrClass) {
+        val properties = irClass.declarations.filterIsInstance<IrProperty>()
+        val functions = irClass.declarations.filterIsInstance<IrSimpleFunction>()
+        val hasStray = properties.any { p ->
+            p.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE) ||
+                p.hasAnnotation(AnnotationFqNames.IGNORE_DEBUGGABLE)
+        } || functions.any { f ->
+            f.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE) ||
+                f.hasAnnotation(AnnotationFqNames.IGNORE_DEBUGGABLE)
+        }
+        if (hasStray) {
+            messageCollector.report(
+                CompilerMessageSeverity.WARNING,
+                "Class '${irClass.name}' has @FocusDebuggable/@IgnoreDebuggable members " +
+                    "but is not annotated with @Debuggable — these annotations have no effect. " +
+                    "Did you forget @Debuggable on the class?",
+            )
         }
     }
 
@@ -109,6 +133,15 @@ internal class DebuggableClassTransformer(
             else true
         }
 
+        // Warn: @Debuggable class with no trackable members
+        if (targetProperties.isEmpty() && targetFunctions.isEmpty()) {
+            messageCollector.report(
+                CompilerMessageSeverity.WARNING,
+                "@Debuggable on '${irClass.name}' has no effect: " +
+                    "no Flow/State properties or public methods to track",
+            )
+        }
+
         val registryField = if (!isSingleton) {
             addRegistryProperty(irClass, symbolProvider, pluginContext)
         } else {
@@ -119,16 +152,20 @@ internal class DebuggableClassTransformer(
             injectRegistryClose(irClass, registryField, symbolProvider, pluginContext)
         }
 
-        injectLogAction(targetFunctions, symbolProvider, pluginContext)
+        if (options.logAction) {
+            injectLogAction(targetFunctions, symbolProvider, pluginContext)
+        }
 
-        injectFlowObservations(
-            irClass = irClass,
-            targetProperties = targetProperties,
-            isSingleton = isSingleton,
-            registryField = registryField,
-            symbolProvider = symbolProvider,
-            pluginContext = pluginContext,
-        )
+        if (options.observeFlow) {
+            injectFlowObservations(
+                irClass = irClass,
+                targetProperties = targetProperties,
+                isSingleton = isSingleton,
+                registryField = registryField,
+                symbolProvider = symbolProvider,
+                pluginContext = pluginContext,
+            )
+        }
     }
 
     private fun IrClass.implementsAutoCloseable(): Boolean =

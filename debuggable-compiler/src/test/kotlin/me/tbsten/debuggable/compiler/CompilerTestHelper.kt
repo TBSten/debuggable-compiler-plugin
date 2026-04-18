@@ -27,16 +27,33 @@ abstract class CompilerTestBase {
         }
     }
 
-    protected fun compile(source: String, pluginEnabled: Boolean = true): JvmCompilationResult =
-        compile(sources = arrayOf(SourceFile.kotlin("Main.kt", source)), pluginEnabled = pluginEnabled)
+    protected fun compile(
+        source: String,
+        pluginEnabled: Boolean = true,
+        observeFlow: Boolean = true,
+        logAction: Boolean = true,
+    ): JvmCompilationResult =
+        compile(
+            sources = arrayOf(SourceFile.kotlin("Main.kt", source)),
+            pluginEnabled = pluginEnabled,
+            observeFlow = observeFlow,
+            logAction = logAction,
+        )
 
-    protected fun compile(vararg sources: SourceFile, pluginEnabled: Boolean = true): JvmCompilationResult =
+    protected fun compile(
+        vararg sources: SourceFile,
+        pluginEnabled: Boolean = true,
+        observeFlow: Boolean = true,
+        logAction: Boolean = true,
+    ): JvmCompilationResult =
         KotlinCompilation().apply {
             this.sources = sources.toList()
             compilerPluginRegistrars = listOf(DebuggableCompilerPluginRegistrar())
             commandLineProcessors = listOf(DebuggableCommandLineProcessor())
             pluginOptions = listOf(
                 PluginOption(BuildConfig.PLUGIN_ID, "enabled", pluginEnabled.toString()),
+                PluginOption(BuildConfig.PLUGIN_ID, "observeFlow", observeFlow.toString()),
+                PluginOption(BuildConfig.PLUGIN_ID, "logAction", logAction.toString()),
             )
             inheritClassPath = true
             messageOutputStream = System.out

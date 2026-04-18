@@ -29,7 +29,11 @@ class DebuggableGradlePlugin : KotlinCompilerPluginSupportPlugin {
         val project = kotlinCompilation.target.project
         val extension = project.extensions.getByType(DebuggableExtension::class.java)
         return project.provider {
-            listOf(SubpluginOption("enabled", extension.enabled.get().toString()))
+            listOf(
+                SubpluginOption("enabled", extension.enabled.get().toString()),
+                SubpluginOption("observeFlow", extension.observeFlow.get().toString()),
+                SubpluginOption("logAction", extension.logAction.get().toString()),
+            )
         }
     }
 }

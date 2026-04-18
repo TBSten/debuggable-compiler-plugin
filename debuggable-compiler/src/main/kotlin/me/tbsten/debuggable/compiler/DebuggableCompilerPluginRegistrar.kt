@@ -14,6 +14,15 @@ class DebuggableCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         val enabled = configuration[KEY_ENABLED] ?: true
         if (!enabled) return
-        IrGenerationExtension.registerExtension(DebuggableIrGenerationExtension())
+        val options = DebuggableOptions(
+            observeFlow = configuration[KEY_OBSERVE_FLOW] ?: true,
+            logAction = configuration[KEY_LOG_ACTION] ?: true,
+        )
+        IrGenerationExtension.registerExtension(DebuggableIrGenerationExtension(options))
     }
 }
+
+data class DebuggableOptions(
+    val observeFlow: Boolean,
+    val logAction: Boolean,
+)

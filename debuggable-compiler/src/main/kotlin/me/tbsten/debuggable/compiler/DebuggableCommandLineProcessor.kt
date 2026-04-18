@@ -8,6 +8,8 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
 
 internal val KEY_ENABLED = CompilerConfigurationKey.create<Boolean>("debuggable.enabled")
+internal val KEY_OBSERVE_FLOW = CompilerConfigurationKey.create<Boolean>("debuggable.observeFlow")
+internal val KEY_LOG_ACTION = CompilerConfigurationKey.create<Boolean>("debuggable.logAction")
 
 @OptIn(ExperimentalCompilerApi::class)
 class DebuggableCommandLineProcessor : CommandLineProcessor {
@@ -17,7 +19,19 @@ class DebuggableCommandLineProcessor : CommandLineProcessor {
         CliOption(
             optionName = "enabled",
             valueDescription = "<true|false>",
-            description = "Enable or disable the Debuggable compiler plugin",
+            description = "Enable or disable the Debuggable compiler plugin entirely",
+            required = false,
+        ),
+        CliOption(
+            optionName = "observeFlow",
+            valueDescription = "<true|false>",
+            description = "Inject Flow/State property observation (default: true)",
+            required = false,
+        ),
+        CliOption(
+            optionName = "logAction",
+            valueDescription = "<true|false>",
+            description = "Inject method call logAction (default: true)",
             required = false,
         ),
     )
@@ -27,8 +41,11 @@ class DebuggableCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration,
     ) {
-        if (option.optionName == "enabled") {
-            configuration.put(KEY_ENABLED, value.toBooleanStrict())
+        val parsed = value.toBooleanStrict()
+        when (option.optionName) {
+            "enabled" -> configuration.put(KEY_ENABLED, parsed)
+            "observeFlow" -> configuration.put(KEY_OBSERVE_FLOW, parsed)
+            "logAction" -> configuration.put(KEY_LOG_ACTION, parsed)
         }
     }
 }

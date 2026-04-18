@@ -97,6 +97,19 @@ If `@FocusDebuggable` or similar is applied to a type other than these, a warnin
 ### 4. Zero Overhead in Release Builds
 When `enabled.set(false)` is configured on the Gradle plugin side (the default for Release builds), the KCP performs no IR transformations. No debugging code or Runtime library dependencies remain in the production binary, so there is zero performance impact.
 
+### 5. Gradle DSL
+The Gradle plugin exposes per-feature toggles so individual instrumentation aspects can be disabled without dropping the plugin entirely.
+
+```kotlin
+debuggable {
+    enabled.set(true)        // master switch (default: true)
+    observeFlow.set(true)    // wrap Flow/State initializers (default: true)
+    logAction.set(true)      // log public method calls (default: true)
+}
+```
+
+When `enabled = false`, the plugin is a complete no-op. When `observeFlow` or `logAction` is individually disabled, that specific transformation is skipped while others still run.
+
 ---
 
 ## 🧪 Try it Locally

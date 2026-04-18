@@ -224,6 +224,35 @@ class CompilationTests : CompilerTestBase() {
         @Debuggable class Child : Base(), AutoCloseable
     """)
 
+    @Test fun `empty Debuggable class emits warning`() = warn("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        @Debuggable(isSingleton = true) object EmptyObj
+    """)
+
+    @Test fun `Debuggable class with only non-Flow properties emits warning`() = warn("""
+        import me.tbsten.debuggable.runtime.annotations.Debuggable
+        @Debuggable(isSingleton = true) object MyObj {
+            val name: String = "hello"
+            val count: Int = 0
+        }
+    """)
+
+    @Test fun `FocusDebuggable outside Debuggable class emits warning`() = warn("""
+        import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+        import kotlinx.coroutines.flow.MutableStateFlow
+        class ForgotDebuggable {
+            @FocusDebuggable val count = MutableStateFlow(0)
+        }
+    """)
+
+    @Test fun `IgnoreDebuggable outside Debuggable class emits warning`() = warn("""
+        import me.tbsten.debuggable.runtime.annotations.IgnoreDebuggable
+        import kotlinx.coroutines.flow.MutableStateFlow
+        class ForgotDebuggable {
+            @IgnoreDebuggable val count = MutableStateFlow(0)
+        }
+    """)
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private fun ok(source: String) {

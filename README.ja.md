@@ -96,6 +96,19 @@ val uiState = mutableStateOf(UiState()).also {
 ### 4. リリース時のゼロ・オーバーヘッド
 Gradleプラグイン側で `enabled.set(false)` に設定されている場合（デフォルトでは Release ビルド）、KCP は IR 変換を一切行いません。本番環境のバイナリにはデバッグ用のコードや Runtime ライブラリの依存が一切残らないため、パフォーマンスへの影響はありません。
 
+### 5. Gradle DSL
+Gradle プラグインは機能単位のトグルを提供しており、プラグイン全体を無効化せず特定の計測だけを個別に OFF にできます。
+
+```kotlin
+debuggable {
+    enabled.set(true)        // マスタースイッチ（デフォルト: true）
+    observeFlow.set(true)    // Flow/State イニシャライザのラップ（デフォルト: true）
+    logAction.set(true)      // public メソッド呼び出しのログ（デフォルト: true）
+}
+```
+
+`enabled = false` の場合プラグインは完全な no-op になります。`observeFlow` と `logAction` を個別に無効化すると、その変換だけがスキップされ他の機能はそのまま動作します。
+
 ---
 
 ## 🧪 サンプル
