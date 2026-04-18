@@ -1,10 +1,10 @@
 @file:OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
 
-package me.tbsten.debuggable.compiler.compat.k20.visitors
+package me.tbsten.debuggable.compiler.compat.k2020.visitors
 
 import me.tbsten.debuggable.compiler.compat.IrInjector
-import me.tbsten.debuggable.compiler.compat.k20.messageCollectorK20Compat
-import me.tbsten.debuggable.compiler.compat.k20.util.AnnotationFqNames
+import me.tbsten.debuggable.compiler.compat.k2020.messageCollectorK20Compat
+import me.tbsten.debuggable.compiler.compat.k2020.util.AnnotationFqNames
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -15,7 +15,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.util.defaultType
-import me.tbsten.debuggable.compiler.compat.k20.getAnnotationCompat
+import me.tbsten.debuggable.compiler.compat.k2020.getAnnotationCompat
 
 /**
  * Resolves the DebugLogger to pass as the `logger` argument of `debuggableFlow` /

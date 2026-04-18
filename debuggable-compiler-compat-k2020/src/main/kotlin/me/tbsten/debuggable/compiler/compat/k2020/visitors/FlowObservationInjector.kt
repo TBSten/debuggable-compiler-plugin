@@ -1,9 +1,9 @@
 @file:OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
 
-package me.tbsten.debuggable.compiler.compat.k20.visitors
+package me.tbsten.debuggable.compiler.compat.k2020.visitors
 
-import me.tbsten.debuggable.compiler.compat.k20.util.isFlow
-import me.tbsten.debuggable.compiler.compat.k20.util.isState
+import me.tbsten.debuggable.compiler.compat.k2020.util.isFlow
+import me.tbsten.debuggable.compiler.compat.k2020.util.isState
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock

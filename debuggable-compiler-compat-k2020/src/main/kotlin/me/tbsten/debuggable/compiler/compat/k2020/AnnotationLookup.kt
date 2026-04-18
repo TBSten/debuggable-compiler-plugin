@@ -1,6 +1,6 @@
 @file:OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
 
-package me.tbsten.debuggable.compiler.compat.k20
+package me.tbsten.debuggable.compiler.compat.k2020
 
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall

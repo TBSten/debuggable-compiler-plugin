@@ -12,6 +12,9 @@ import java.util.ServiceLoader
  * the highest-versioned factory wins as a fallback.
  */
 object IrInjectorLoader {
+    /** Set to `true` to print which factories were discovered / chosen to stderr. */
+    private val DEBUG: Boolean = System.getProperty("debuggable.compat.debug") == "true"
+
     fun load(
         classLoader: ClassLoader = IrInjector::class.java.classLoader,
     ): IrInjector {
@@ -28,9 +31,11 @@ object IrInjectorLoader {
             val factory = try {
                 if (!rawIterator.hasNext()) break
                 rawIterator.next()
-            } catch (_: Throwable) {
-                continue // skip unloadable provider — its min-version wouldn't match anyway
+            } catch (t: Throwable) {
+                if (DEBUG) System.err.println("[Debuggable compat] factory skipped: ${t.javaClass.simpleName}: ${t.message}")
+                continue
             }
+            if (DEBUG) System.err.println("[Debuggable compat] factory found: ${factory.javaClass.name} (minVersion=${factory.minVersion})")
             factories += factory
         }
         require(factories.isNotEmpty()) {

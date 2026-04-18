@@ -1,4 +1,4 @@
-package me.tbsten.debuggable.compiler.compat.k20
+package me.tbsten.debuggable.compiler.compat.k2020
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity

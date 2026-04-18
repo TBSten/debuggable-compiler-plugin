@@ -1,8 +1,8 @@
-package me.tbsten.debuggable.compiler.compat.k20
+package me.tbsten.debuggable.compiler.compat.k2020
 
 import me.tbsten.debuggable.compiler.compat.IrInjector
-import me.tbsten.debuggable.compiler.compat.k20.visitors.DebuggableClassTransformer
-import me.tbsten.debuggable.compiler.compat.k20.visitors.LocalVariableTransformer
+import me.tbsten.debuggable.compiler.compat.k2020.visitors.DebuggableClassTransformer
+import me.tbsten.debuggable.compiler.compat.k2020.visitors.LocalVariableTransformer
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents

@@ -1,4 +1,4 @@
-package me.tbsten.debuggable.compiler.compat.k20.util
+package me.tbsten.debuggable.compiler.compat.k2020.util
 
 import org.jetbrains.kotlin.name.FqName
 
