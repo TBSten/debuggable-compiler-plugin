@@ -2,10 +2,10 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("multiplatform") version "2.3.20"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.20"
-    id("org.jetbrains.compose") version "1.10.3"
-    id("me.tbsten.debuggable") version "0.1.0"
+    kotlin("multiplatform")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.compose")
+    id("me.tbsten.debuggable")
 }
 
 kotlin {

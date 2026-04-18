@@ -1,6 +1,20 @@
 rootProject.name = "debuggable-android-sample"
 
 pluginManagement {
+    val kotlinVersion: String = (settings.providers.gradleProperty("integration.kotlin").orNull
+        ?: "2.3.20")
+    val agpVersion: String = (settings.providers.gradleProperty("integration.agp").orNull
+        ?: "8.12.3")
+    val debuggableVersion: String = (settings.providers.gradleProperty("integration.debuggable").orNull
+        ?: "0.1.0")
+
+    plugins {
+        id("com.android.application") version agpVersion
+        id("org.jetbrains.kotlin.android") version kotlinVersion
+        id("org.jetbrains.kotlin.plugin.compose") version kotlinVersion
+        id("me.tbsten.debuggable") version debuggableVersion
+    }
+
     repositories {
         mavenLocal()
         gradlePluginPortal()
@@ -13,6 +27,7 @@ pluginManagement {
             }
         }
         mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-eap")
     }
 }
 
@@ -28,6 +43,7 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-eap")
     }
 }
 

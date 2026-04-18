@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.application") version "8.12.3" apply false
-    id("org.jetbrains.kotlin.android") version "2.3.20" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.20" apply false
-    id("me.tbsten.debuggable") version "0.1.0" apply false
+    id("com.android.application") apply false
+    id("org.jetbrains.kotlin.android") apply false
+    id("org.jetbrains.kotlin.plugin.compose") apply false
+    id("me.tbsten.debuggable") apply false
 }
