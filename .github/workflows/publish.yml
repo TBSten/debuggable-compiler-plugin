@@ -1,0 +1,74 @@
+name: Publish
+
+# Central Portal publish, two entry points:
+#
+#   1. `workflow_dispatch` — manual run from Actions tab. Default `stage_only=true`
+#      uploads to the staging area so a human can review the deployment on
+#      https://central.sonatype.com/ before clicking Publish. Flip to `false` for
+#      an auto-release from the UI without creating a Release.
+#   2. `release` published — creating a GitHub Release triggers
+#      `publishAndReleaseToMavenCentral` so the version noted on the Release
+#      lands on Central automatically.
+#
+# Secrets required (Settings → Secrets and variables → Actions):
+#   MAVEN_CENTRAL_USERNAME / MAVEN_CENTRAL_PASSWORD    user token from Central Portal
+#   SIGNING_IN_MEMORY_KEY                               ASCII-armored GPG private key
+#   SIGNING_IN_MEMORY_KEY_ID                            optional, last 8 hex chars
+#   SIGNING_IN_MEMORY_KEY_PASSWORD                      GPG passphrase
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage_only:
+        description: 'Stage only (manual release via Central Portal UI)'
+        type: boolean
+        default: true
+  release:
+    types: [published]
+
+concurrency:
+  # Workflow-scoped, not ref-scoped: two publishes racing to Central are never OK.
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Fast pre-flight. The full 17-version matrix runs on push to main in
+      # `ci.yml`; re-running it here would double release latency for no extra
+      # signal.
+      - name: Sanity tests (jvm runtime + pinned compiler)
+        run: ./gradlew :debuggable-runtime:jvmTest :debuggable-compiler:test --no-daemon
+
+      - name: Publish to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
+        run: |
+          # release published, OR dispatch with stage_only=false → auto-release.
+          # dispatch with stage_only=true (the default) → stage only.
+          if [[ "${{ github.event_name }}" == "release" \
+             || "${{ inputs.stage_only }}" == "false" ]]; then
+            task=publishAndReleaseToMavenCentral
+          else
+            task=publishToMavenCentral
+          fi
+          echo "Running Gradle task: $task"
+          # `--no-configuration-cache` because vanniktech's signing tasks aren't
+          # configuration-cache-safe (the project has configuration cache on by
+          # default in gradle.properties).
+          ./gradlew "$task" --no-configuration-cache --no-daemon --stacktrace

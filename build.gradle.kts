@@ -45,7 +45,11 @@ subprojects {
                     developerConnection = "scm:git:ssh://git@github.com/TBSten/debuggable-compiler-plugin.git"
                 }
             }
-            if (project.hasProperty("signing.keyId")) {
+            // Enable GPG signing if either path has credentials: vanniktech's in-memory
+            // flow (`ORG_GRADLE_PROJECT_signingInMemoryKey` → `signingInMemoryKey` property,
+            // used by the Publish workflow) or the classic signing plugin properties
+            // (`signing.keyId`, still handy for local dev off a keychain).
+            if (project.hasProperty("signingInMemoryKey") || project.hasProperty("signing.keyId")) {
                 signAllPublications()
             }
         }
