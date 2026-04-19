@@ -16,6 +16,22 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  # Read scripts/supported-kotlin-versions.txt (SSOT) and emit it as a JSON array
+  # that downstream matrix jobs can consume via `fromJSON`.
+  versions:
+    name: 'resolve supported Kotlin versions'
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.read.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: |
+          list=$(grep -vE '^\s*(#|$)' scripts/supported-kotlin-versions.txt \
+                   | jq -R . | jq -sc .)
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+          echo "Resolved: $list"
+
   # Runtime KMP tests + kctfork unit tests pinned to the project's Kotlin version.
   # Fastest path — everything in-process, single Kotlin.
   unit-pinned:
@@ -46,29 +62,13 @@ jobs:
   # compatible one — any real incompatibility surfaces as a test failure.
   unit-matrix:
     name: 'unit / kotlin-${{ matrix.kotlin }}'
+    needs: versions
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        kotlin:
-          - '2.0.0'
-          - '2.0.10'
-          - '2.0.20'
-          - '2.0.21'
-          - '2.1.0'
-          - '2.1.10'
-          - '2.1.20'
-          - '2.1.21'
-          - '2.2.0'
-          - '2.2.10'
-          - '2.2.20'
-          - '2.2.21'
-          - '2.3.0'
-          - '2.3.10'
-          - '2.3.20'
-          - '2.3.21-RC2'
-          - '2.4.0-Beta1'
+        kotlin: ${{ fromJSON(needs.versions.outputs.list) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -89,29 +89,13 @@ jobs:
   # verify the injected bytecode symbols are present.
   integration:
     name: 'integration / kotlin-${{ matrix.kotlin }}'
+    needs: versions
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        kotlin:
-          - '2.0.0'
-          - '2.0.10'
-          - '2.0.20'
-          - '2.0.21'
-          - '2.1.0'
-          - '2.1.10'
-          - '2.1.20'
-          - '2.1.21'
-          - '2.2.0'
-          - '2.2.10'
-          - '2.2.20'
-          - '2.2.21'
-          - '2.3.0'
-          - '2.3.10'
-          - '2.3.20'
-          - '2.3.21-RC2'
-          - '2.4.0-Beta1'
+        kotlin: ${{ fromJSON(needs.versions.outputs.list) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -134,7 +118,7 @@ jobs:
   final:
     if: always()
     runs-on: ubuntu-latest
-    needs: [unit-pinned, unit-matrix, integration]
+    needs: [versions, unit-pinned, unit-matrix, integration]
     steps:
       - name: Check all results
         run: |

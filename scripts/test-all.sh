@@ -15,28 +15,15 @@
 
 set -u
 
-VERSIONS=(
-    "2.3.20"
-    "2.3.21-RC2"
-    "2.4.0-Beta1"
-    "2.3.10"
-    "2.3.0"
-    "2.2.21"
-    "2.2.20"
-    "2.2.10"
-    "2.2.0"
-    "2.1.21"
-    "2.1.20"
-    "2.1.10"
-    "2.1.0"
-    "2.0.21"
-    "2.0.20"
-    "2.0.10"
-    "2.0.0"
-)
-
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+
+# Load versions from the SSOT file, stripping comments and blank lines.
+# Portable to macOS bash 3.2 (which lacks `mapfile`).
+VERSIONS=()
+while IFS= read -r line; do
+    VERSIONS+=("$line")
+done < <(grep -vE '^[[:space:]]*(#|$)' scripts/supported-kotlin-versions.txt)
 
 log_dir=".local/tmp"
 mkdir -p "$log_dir"

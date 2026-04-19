@@ -1,6 +1,8 @@
 package me.tbsten.debuggable.compiler.compat
 
 import java.util.ServiceLoader
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 
 /**
  * Discovers all available [IrInjector.Factory] instances via [ServiceLoader] and
@@ -43,8 +45,8 @@ object IrInjectorLoader {
                 "`debuggable-compiler-compat-kXX` modules is on the runtime classpath."
         }
 
-        val currentVersion = detectKotlinVersion(classLoader)
-            ?.let { SimpleKotlinVersion.parse(it) }
+        val rawVersion = detectKotlinVersion(classLoader)
+        val currentVersion = rawVersion?.let { SimpleKotlinVersion.parse(it) }
 
         // Pick the factory with highest minVersion that is still <= current version.
         val chosen = if (currentVersion != null) {
@@ -58,7 +60,35 @@ object IrInjectorLoader {
         val factory = chosen ?: factories
             .maxByOrNull { SimpleKotlinVersion.parse(it.minVersion) }!!
 
+        reportSelection(factory, rawVersion, chosen == null)
+
         return factory.create()
+    }
+
+    // Emits a single INFO-level line so CI logs (and `--info` builds) can show
+    // which compat impl was picked for the running Kotlin compiler. Silent
+    // selection is the historical cause of several "why didn't the plugin run"
+    // bug reports.
+    private fun reportSelection(
+        factory: IrInjector.Factory,
+        currentVersion: String?,
+        fellBackToHighest: Boolean,
+    ) {
+        val msg = buildString {
+            append("[Debuggable] compat impl selected: ")
+            append(factory.javaClass.name)
+            append(" (minVersion=").append(factory.minVersion).append(")")
+            if (currentVersion != null) {
+                append(" for Kotlin ").append(currentVersion)
+            } else {
+                append(" (Kotlin version not detected)")
+            }
+            if (fellBackToHighest) {
+                append(" [fallback: highest minVersion]")
+            }
+        }
+        MessageCollectorHolder.get()?.report(CompilerMessageSeverity.INFO, msg)
+            ?: if (DEBUG) System.err.println(msg) else Unit
     }
 
     private fun detectKotlinVersion(classLoader: ClassLoader): String? {
