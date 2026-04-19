@@ -5,7 +5,7 @@ plugins {
     kotlin("multiplatform")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.compose")
-    id("me.tbsten.debuggable")
+    id("me.tbsten.debuggablecompilerplugin")
 }
 
 kotlin {
@@ -24,7 +24,7 @@ kotlin {
                 // Kotlin 2.0/2.1 compilers. 1.10.x publishes metadata [2,1,0] which those
                 // compilers reject (see .local/tickets/002-runtime-binary-compat-2.0-2.1.md).
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
-                implementation("me.tbsten.debuggable:debuggable-runtime:0.1.0")
+                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
             }
         }
     }

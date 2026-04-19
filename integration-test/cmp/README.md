@@ -1,6 +1,6 @@
 # Debuggable — Compose Multiplatform Sample
 
-A minimal Compose Multiplatform Desktop app that applies the `me.tbsten.debuggable` plugin to a singleton store.
+A minimal Compose Multiplatform Desktop app that applies the `me.tbsten.debuggablecompilerplugin` plugin to a singleton store.
 
 ## Prerequisites
 
@@ -32,7 +32,7 @@ A window opens with a counter. Every click on `+1`, `-1`, or `Next label` prints
 
 | Path | What it shows |
 |------|--------------|
-| [`build.gradle.kts`](build.gradle.kts) | Applies `id("me.tbsten.debuggable")` and depends on `debuggable-runtime` |
+| [`build.gradle.kts`](build.gradle.kts) | Applies `id("me.tbsten.debuggablecompilerplugin")` and depends on `debuggable-runtime` |
 | [`src/jvmMain/kotlin/example/Main.kt`](src/jvmMain/kotlin/example/Main.kt) | `@Debuggable(isSingleton = true) object CounterStore` + Compose UI |
 | [`settings.gradle.kts`](settings.gradle.kts) | Resolves plugins/dependencies from `mavenLocal()` |
 
@@ -66,14 +66,14 @@ object CounterStore {
 plugins {
     kotlin("multiplatform") version "2.3.20"
     id("org.jetbrains.compose") version "1.10.3"
-    id("me.tbsten.debuggable") version "0.1.0"   // ← apply the plugin
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"   // ← apply the plugin
 }
 
 kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation("me.tbsten.debuggable:debuggable-runtime:0.1.0")
+                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
                 // ...
             }
         }

@@ -1,6 +1,6 @@
 # Debuggable — Android Sample
 
-A minimal Android app that applies the `me.tbsten.debuggable` plugin to a `ViewModel` implementing `AutoCloseable`.
+A minimal Android app that applies the `me.tbsten.debuggablecompilerplugin` plugin to a `ViewModel` implementing `AutoCloseable`.
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ Each click on `+1` or `Next label` prints a `[Debuggable]` log line to Logcat:
 
 | Path | What it shows |
 |------|--------------|
-| [`app/build.gradle.kts`](app/build.gradle.kts) | Applies `id("me.tbsten.debuggable")` and depends on `debuggable-runtime` |
+| [`app/build.gradle.kts`](app/build.gradle.kts) | Applies `id("me.tbsten.debuggablecompilerplugin")` and depends on `debuggable-runtime` |
 | [`app/src/main/kotlin/example/debuggable/android/MainActivity.kt`](app/src/main/kotlin/example/debuggable/android/MainActivity.kt) | `@Debuggable class CounterViewModel : ViewModel(), AutoCloseable` + Compose UI |
 | [`app/src/main/AndroidManifest.xml`](app/src/main/AndroidManifest.xml) | Launcher activity declaration |
 | [`settings.gradle.kts`](settings.gradle.kts) | Resolves plugins/dependencies from `mavenLocal()` |
@@ -81,11 +81,11 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("me.tbsten.debuggable")   // ← apply the plugin
+    id("me.tbsten.debuggablecompilerplugin")   // ← apply the plugin
 }
 
 dependencies {
-    implementation("me.tbsten.debuggable:debuggable-runtime:0.1.0")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
     // ...
 }
 ```

@@ -12,7 +12,7 @@ pluginManagement {
         id("com.android.application") version agpVersion
         id("org.jetbrains.kotlin.android") version kotlinVersion
         id("org.jetbrains.kotlin.plugin.compose") version kotlinVersion
-        id("me.tbsten.debuggable") version debuggableVersion
+        id("me.tbsten.debuggablecompilerplugin") version debuggableVersion
     }
 
     repositories {

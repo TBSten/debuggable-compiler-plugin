@@ -11,7 +11,10 @@ val debuggableVersion = project.property("debuggable.version") as String
 buildConfig {
     packageName("me.tbsten.debuggable.gradle")
     buildConfigField("String", "PLUGIN_ID", "\"$debuggablePluginId\"")
-    buildConfigField("String", "COMPILER_ARTIFACT_GROUP_ID", "\"me.tbsten.debuggable\"")
+    // Keep in sync with `debuggableGroup` in the root build.gradle.kts — the Gradle
+    // plugin uses this at apply-time to add `<group>:debuggable-runtime:<version>` to
+    // the consumer's implementation configuration.
+    buildConfigField("String", "COMPILER_ARTIFACT_GROUP_ID", "\"${rootProject.group}\"")
     buildConfigField("String", "COMPILER_ARTIFACT_ID", "\"debuggable-compiler\"")
     buildConfigField("String", "COMPILER_ARTIFACT_VERSION", "\"$debuggableVersion\"")
 }

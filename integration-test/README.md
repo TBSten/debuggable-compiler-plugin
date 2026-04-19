@@ -1,6 +1,6 @@
 # Integration Test Samples
 
-Local sample projects that consume the `me.tbsten.debuggable` plugin from `mavenLocal()`.
+Local sample projects that consume the `me.tbsten.debuggablecompilerplugin` plugin from `mavenLocal()`.
 
 ## Prerequisites
 
@@ -11,9 +11,9 @@ From the repo root, publish the plugin and runtime to your local Maven repositor
 ```
 
 This publishes:
-- `me.tbsten.debuggable:debuggable-runtime:0.1.0` (KMP targets)
-- `me.tbsten.debuggable:debuggable-compiler:0.1.0`
-- `me.tbsten.debuggable:debuggable-gradle:0.1.0`
+- `me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0` (KMP targets)
+- `me.tbsten.debuggablecompilerplugin:debuggable-compiler:0.1.0`
+- `me.tbsten.debuggablecompilerplugin:debuggable-gradle:0.1.0`
 
 Re-run after any change to the plugin or runtime.
 
@@ -55,7 +55,7 @@ A window opens with a counter. Click `+1`, `-1`, or `Next label` — each state 
 
 | Path | Purpose |
 |------|---------|
-| [`cmp/build.gradle.kts`](cmp/build.gradle.kts) | Applies `id("me.tbsten.debuggable")` and adds `debuggable-runtime` |
+| [`cmp/build.gradle.kts`](cmp/build.gradle.kts) | Applies `id("me.tbsten.debuggablecompilerplugin")` and adds `debuggable-runtime` |
 | [`cmp/src/jvmMain/kotlin/example/Main.kt`](cmp/src/jvmMain/kotlin/example/Main.kt) | `@Debuggable(isSingleton = true) object CounterStore` + Compose UI |
 
 ### Key excerpt — `Main.kt`
@@ -88,14 +88,14 @@ object CounterStore {
 plugins {
     kotlin("multiplatform") version "2.3.20"
     id("org.jetbrains.compose") version "1.10.3"
-    id("me.tbsten.debuggable") version "0.1.0"   // ← apply the plugin
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"   // ← apply the plugin
 }
 
 kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation("me.tbsten.debuggable:debuggable-runtime:0.1.0")
+                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
                 // ...
             }
         }
@@ -123,7 +123,7 @@ adb logcat | grep Debuggable
 
 | Path | Purpose |
 |------|---------|
-| [`android/app/build.gradle.kts`](android/app/build.gradle.kts) | Applies `id("me.tbsten.debuggable")` and adds `debuggable-runtime` |
+| [`android/app/build.gradle.kts`](android/app/build.gradle.kts) | Applies `id("me.tbsten.debuggablecompilerplugin")` and adds `debuggable-runtime` |
 | [`android/app/src/main/kotlin/example/debuggable/android/MainActivity.kt`](android/app/src/main/kotlin/example/debuggable/android/MainActivity.kt) | `@Debuggable class CounterViewModel : ViewModel(), AutoCloseable` + Compose UI |
 | [`android/app/src/main/AndroidManifest.xml`](android/app/src/main/AndroidManifest.xml) | Launcher activity declaration |
 
@@ -162,11 +162,11 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("me.tbsten.debuggable")   // ← apply the plugin
+    id("me.tbsten.debuggablecompilerplugin")   // ← apply the plugin
 }
 
 dependencies {
-    implementation("me.tbsten.debuggable:debuggable-runtime:0.1.0")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
     // ...
 }
 ```

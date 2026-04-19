@@ -10,7 +10,10 @@ plugins {
 }
 
 val debuggableVersion = project.property("debuggable.version") as String
-val debuggableGroup = "me.tbsten.debuggable"
+// Matches the Sonatype Central Portal verified namespace. All 8 published artifacts
+// (`debuggable-runtime`, `debuggable-compiler`, `debuggable-compiler-compat*`,
+// `debuggable-gradle`) and the Gradle plugin marker live under this groupId.
+val debuggableGroup = "me.tbsten.debuggablecompilerplugin"
 val projectUrl = "https://github.com/TBSten/debuggable-compiler-plugin"
 
 allprojects {
