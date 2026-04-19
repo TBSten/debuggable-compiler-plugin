@@ -14,10 +14,6 @@ plugins {
 // the .api files; `apiCheck` runs in CI and on every build, failing when a PR
 // changes the public surface without updating the dump.
 apiValidation {
-    // The aggregator `compat` Gradle project has no source of its own — it
-    // only groups the per-Kotlin-version compat submodules. Skip it so BCV
-    // doesn't try to dump an empty API.
-    ignoredProjects.add("compat")
     // klib validation for the KMP runtime. Enabled to cover native/js/wasm
     // targets in addition to JVM bytecode.
     @OptIn(kotlinx.validation.ExperimentalBCVApi::class)

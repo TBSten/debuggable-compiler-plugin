@@ -12,6 +12,23 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
  * own `kotlin-compiler-embeddable` version, so its bytecode only references APIs that exist
  * in that version. The [Factory.minVersion] declared in each module's
  * `META-INF/services` entry determines which impl is loaded at runtime.
+ *
+ * ## Public-SPI stability contract
+ *
+ * This interface is the narrow boundary between the main plugin JAR (which only compiles
+ * against version-agnostic APIs) and each `debuggable-compiler-compat-kXX` shadow. Third-party
+ * compat implementations could legitimately register themselves via `ServiceLoader` on a
+ * user's classpath, though we don't recommend it — we treat this file as **public SPI** for
+ * backward-compatibility purposes:
+ *
+ * - New methods MUST have a default body, never an abstract declaration.
+ * - [Options] gains new fields only with a default value so older compat impls keep linking.
+ * - [Factory.minVersion] is parsed with [SimpleKotlinVersion]; formats it has accepted historically
+ *   (e.g. `"2.3.20"`, `"2.4.0-Beta1"`, `"2.3.20-dev-5706"`) remain accepted.
+ * - Renaming or removing anything here is a breaking change and requires a minor version bump.
+ *
+ * ABI drift on this SPI is caught by `binary-compatibility-validator` — see the
+ * generated `compat.api` baseline under each per-version compat module's `api/` directory.
  */
 interface IrInjector {
     fun transform(

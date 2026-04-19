@@ -1,0 +1,39 @@
+public abstract interface class me/tbsten/debuggable/compiler/compat/IrInjector {
+	public abstract fun transform (Lorg/jetbrains/kotlin/ir/declarations/IrModuleFragment;Lorg/jetbrains/kotlin/backend/common/extensions/IrPluginContext;Lme/tbsten/debuggable/compiler/compat/IrInjector$Options;)V
+}
+
+public abstract interface class me/tbsten/debuggable/compiler/compat/IrInjector$Factory {
+	public abstract fun create ()Lme/tbsten/debuggable/compiler/compat/IrInjector;
+	public abstract fun getMinVersion ()Ljava/lang/String;
+}
+
+public final class me/tbsten/debuggable/compiler/compat/IrInjector$Options {
+	public fun <init> ()V
+	public fun <init> (ZZLjava/lang/String;)V
+	public synthetic fun <init> (ZZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (ZZLjava/lang/String;)Lme/tbsten/debuggable/compiler/compat/IrInjector$Options;
+	public static synthetic fun copy$default (Lme/tbsten/debuggable/compiler/compat/IrInjector$Options;ZZLjava/lang/String;ILjava/lang/Object;)Lme/tbsten/debuggable/compiler/compat/IrInjector$Options;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefaultLoggerFqn ()Ljava/lang/String;
+	public final fun getLogAction ()Z
+	public final fun getObserveFlow ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class me/tbsten/debuggable/compiler/compat/IrInjectorLoader {
+	public static final field INSTANCE Lme/tbsten/debuggable/compiler/compat/IrInjectorLoader;
+	public final fun load (Ljava/lang/ClassLoader;)Lme/tbsten/debuggable/compiler/compat/IrInjector;
+	public static synthetic fun load$default (Lme/tbsten/debuggable/compiler/compat/IrInjectorLoader;Ljava/lang/ClassLoader;ILjava/lang/Object;)Lme/tbsten/debuggable/compiler/compat/IrInjector;
+}
+
+public final class me/tbsten/debuggable/compiler/compat/MessageCollectorHolder {
+	public static final field INSTANCE Lme/tbsten/debuggable/compiler/compat/MessageCollectorHolder;
+	public final fun clear ()V
+	public final fun get ()Lorg/jetbrains/kotlin/cli/common/messages/MessageCollector;
+	public final fun set (Lorg/jetbrains/kotlin/cli/common/messages/MessageCollector;)V
+}
+
