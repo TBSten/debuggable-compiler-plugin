@@ -2,13 +2,14 @@ name: Publish
 
 # Central Portal publish, two entry points:
 #
-#   1. `workflow_dispatch` — manual run from Actions tab. Default `stage_only=true`
-#      uploads to the staging area so a human can review the deployment on
-#      https://central.sonatype.com/ before clicking Publish. Flip to `false` for
-#      an auto-release from the UI without creating a Release.
-#   2. `release` published — creating a GitHub Release triggers
+#   1. `workflow_dispatch` — manual run from Actions tab. Default `stage_only=false`
+#      auto-releases (`publishAndReleaseToMavenCentral`); the assumption is that
+#      the operator already validated locally via `publishToMavenLocal`. Flip to
+#      `true` only when you want a deployment parked in the Central Portal UI for
+#      an extra human review step before clicking Publish.
+#   2. `release` published — creating a GitHub Release always triggers
 #      `publishAndReleaseToMavenCentral` so the version noted on the Release
-#      lands on Central automatically.
+#      lands on Central automatically (no manual-promote step).
 #
 # Secrets required (Settings → Secrets and variables → Actions):
 #   MAVEN_CENTRAL_USERNAME / MAVEN_CENTRAL_PASSWORD    user token from Central Portal
@@ -20,9 +21,9 @@ on:
   workflow_dispatch:
     inputs:
       stage_only:
-        description: 'Stage only (manual release via Central Portal UI)'
+        description: 'Stage only — park the deployment in Central Portal for a human to click Publish (default: auto-release)'
         type: boolean
-        default: true
+        default: false
   release:
     types: [published]
 
@@ -59,13 +60,13 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
         run: |
-          # release published, OR dispatch with stage_only=false → auto-release.
-          # dispatch with stage_only=true (the default) → stage only.
-          if [[ "${{ github.event_name }}" == "release" \
-             || "${{ inputs.stage_only }}" == "false" ]]; then
-            task=publishAndReleaseToMavenCentral
-          else
+          # release published → always auto-release.
+          # workflow_dispatch → auto-release by default; stage-only only when
+          # the operator explicitly asked for it.
+          if [[ "${{ inputs.stage_only }}" == "true" ]]; then
             task=publishToMavenCentral
+          else
+            task=publishAndReleaseToMavenCentral
           fi
           echo "Running Gradle task: $task"
           # `--no-configuration-cache` because vanniktech's signing tasks aren't
