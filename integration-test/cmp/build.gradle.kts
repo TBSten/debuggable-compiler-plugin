@@ -20,11 +20,11 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
-                // Pinned to 1.9.0 (metadata [2,0,0]) so the sample can be built against
-                // Kotlin 2.0/2.1 compilers. 1.10.x publishes metadata [2,1,0] which those
-                // compilers reject (see .local/tickets/002-runtime-binary-compat-2.0-2.1.md).
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
-                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+                // Versions (coroutines pinned at 1.9.0, Debuggable runtime) live in
+                // `integration-test/gradle/libs.versions.toml`; see that file's header
+                // for the metadata-compatibility rationale behind the coroutines pin.
+                implementation(libs.kotlinx.coroutines.swing)
+                implementation(libs.debuggable.runtime)
             }
         }
     }

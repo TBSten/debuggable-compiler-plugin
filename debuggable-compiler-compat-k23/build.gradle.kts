@@ -37,8 +37,9 @@ dependencies {
     // Pinned to 2.2.0 (this impl's minVersion) so the resulting bytecode only references
     // symbols that already existed in 2.2.0 — e.g. the pre-2.3.20 `IrDeclarationOrigin`
     // companion layout (see KT commit `3494003c1d`, which renamed the companion accessor
-    // and would otherwise link-fail on 2.2.0 – 2.3.10 runtimes).
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.0")
+    // and would otherwise link-fail on 2.2.0 – 2.3.10 runtimes). Version defined in
+    // `gradle/libs.versions.toml` as `kotlin-compiler-embeddable-k23`.
+    compileOnly(libs.compat.embeddable.k23)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

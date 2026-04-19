@@ -36,7 +36,7 @@ dependencies {
     // that existed in Kotlin 2.0.x. ServiceLoader picks this impl when the running
     // compiler is 2.0.0 – 2.1.10 (before `pluginContext.messageCollector` was introduced
     // and before the new `arguments[param] = expr` / `insertExtensionReceiver` IR APIs).
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.0.21")
+    compileOnly(libs.compat.embeddable.k2020)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

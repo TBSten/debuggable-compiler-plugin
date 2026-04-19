@@ -1,0 +1,20 @@
+# Version catalog for integration-test/cmp (Compose Multiplatform Desktop sample).
+# Standalone from the plugin's root catalog so this sample stays a realistic
+# consumer of the published artifacts.
+
+[versions]
+
+# Published Debuggable version this sample resolves against. Bump together
+# with the root `gradle.properties` `debuggable.version` on release.
+debuggable = "0.1.0"
+
+# Coroutines pinned to 1.9.0 (metadata `[2,0,0]`) so the sample can build
+# against Kotlin 2.0 / 2.1 compilers — 1.10.x publishes `[2,1,0]` which those
+# compilers reject. See `.local/multi-kotlin-versions/current.md` for the
+# metadata compatibility story.
+kotlinx-coroutines = "1.9.0"
+
+[libraries]
+
+debuggable-runtime       = { module = "me.tbsten.debuggablecompilerplugin:debuggable-runtime", version.ref = "debuggable" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing",        version.ref = "kotlinx-coroutines" }

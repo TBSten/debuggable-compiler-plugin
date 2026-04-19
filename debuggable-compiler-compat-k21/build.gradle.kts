@@ -34,8 +34,9 @@ dependencies {
     // Compiled against Kotlin 2.1.21's compiler API so bytecode only references symbols
     // that existed in 2.1.x. ServiceLoader picks this impl when the running compiler is
     // 2.1.20 — 2.1.21 (where `pluginContext.messageCollector` exists but `irCall` is still
-    // on `IrBuilderWithScope`).
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21")
+    // on `IrBuilderWithScope`). Version defined in `gradle/libs.versions.toml` as
+    // `kotlin-compiler-embeddable-k21`.
+    compileOnly(libs.compat.embeddable.k21)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

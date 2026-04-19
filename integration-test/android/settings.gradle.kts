@@ -32,6 +32,9 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    // `gradle/libs.versions.toml` next to this settings file is auto-discovered
+    // by Gradle as the `libs` catalog — no explicit `versionCatalogs { ... }`.
+
     repositories {
         mavenLocal()
         google {
