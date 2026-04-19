@@ -37,11 +37,11 @@ Then apply the plugin and add the runtime dependency in your module's `build.gra
 ```kotlin
 plugins {
     kotlin("jvm") // or kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
         }
     }
 }
@@ -275,7 +275,7 @@ From the repo root:
 ./gradlew publishToMavenLocal
 ```
 
-This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.1`) into `~/.m2/`.
+This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.2`) into `~/.m2/`.
 
 ### 2. Pick a sample
 
@@ -327,6 +327,22 @@ matching `kctfork`):
 | 2.0.20      | ✅ Verified |
 | 2.0.10      | ✅ Verified |
 | 2.0.0       | ✅ Verified |
+
+> **Known issue — Android + Kotlin 2.0.x / 2.1.x consumers (as of 0.1.2):**
+> The published Android variant's `.module` leaks a `kotlin-stdlib:<pinned>`
+> dependency, which Gradle force-upgrades on older Kotlin consumers and breaks
+> the compile with `"metadata version 2.3.0, expected 2.0.0"`. Workaround until
+> the `.module` leak is patched — add to the consumer `build.gradle.kts`:
+>
+> ```kotlin
+> configurations.all {
+>     resolutionStrategy.eachDependency {
+>         if (requested.group == "org.jetbrains.kotlin" && requested.name == "kotlin-stdlib") {
+>             useVersion("<your Kotlin version, e.g. 2.0.21>")
+>         }
+>     }
+> }
+> ```
 
 ### How multi-version works internally
 

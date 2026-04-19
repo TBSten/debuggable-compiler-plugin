@@ -37,11 +37,11 @@ dependencyResolutionManagement {
 ```kotlin
 plugins {
     kotlin("jvm") // もしくは kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
         }
     }
 }
@@ -275,7 +275,7 @@ class ComplexViewModel : ViewModel() {
 ./gradlew publishToMavenLocal
 ```
 
-これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.1`) が `~/.m2/` にインストールされます。
+これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.2`) が `~/.m2/` にインストールされます。
 
 ### 2. サンプルを選ぶ
 
@@ -326,6 +326,23 @@ DEBUGGABLE_PARALLEL=6 ./scripts/test-all.sh
 | 2.0.20      | ✅ 検証済み |
 | 2.0.10      | ✅ 検証済み |
 | 2.0.0       | ✅ 検証済み |
+
+> **既知の問題 — Android + Kotlin 2.0.x / 2.1.x consumer (0.1.2 時点):**
+> Android variant の `.module` に `kotlin-stdlib:<pinned>` が leak しており、
+> Gradle が古い Kotlin を使う consumer 側の stdlib を強制的に上書きし、
+> `"metadata version 2.3.0, expected 2.0.0"` でコンパイルが失敗します。
+> `.module` の leak 修正までの workaround として、 consumer の
+> `build.gradle.kts` に以下を追加:
+>
+> ```kotlin
+> configurations.all {
+>     resolutionStrategy.eachDependency {
+>         if (requested.group == "org.jetbrains.kotlin" && requested.name == "kotlin-stdlib") {
+>             useVersion("<consumer の Kotlin バージョン, 例: 2.0.21>")
+>         }
+>     }
+> }
+> ```
 
 ### マルチバージョン対応の内部仕組み
 

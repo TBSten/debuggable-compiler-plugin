@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -8,9 +9,18 @@ plugins {
 }
 
 kotlin {
-    // Gradle 8's minimum JDK is 17. Emit Java 17 bytecode so daemons on JDK 17
-    // can load the plugin, even when this module is published from CI's JDK 21.
     compilerOptions {
+        // Pin the metadata binary version to `[2,0,0]` so consumer projects on
+        // Kotlin 2.0.x can load this Gradle plugin. Kotlin Gradle Plugin embeds
+        // a `kotlinx-metadata-jvm` sized to its own Kotlin version — on 2.0.21
+        // that library only supports metadata ≤ 2.1.0 and throws
+        // "Provided metadata instance has version 2.3.0, while maximum supported
+        //  version is 2.1.0" when the subplugin class is introspected.
+        // Without this pin the default (= pinned compiler's 2.3.0) leaks.
+        apiVersion = KotlinVersion.KOTLIN_2_0
+        languageVersion = KotlinVersion.KOTLIN_2_0
+        // Gradle 8's minimum JDK is 17. Emit Java 17 bytecode so daemons on JDK 17
+        // can load the plugin, even when this module is published from CI's JDK 21.
         jvmTarget = JvmTarget.JVM_17
     }
 }
