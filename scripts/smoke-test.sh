@@ -50,10 +50,10 @@ echo "Logs: $log_prefix.*.log"
 
 if [[ "${SMOKE_SKIP_PUBLISH:-0}" == "1" ]]; then
     echo
-    echo "--- Step 1/3: publishToMavenLocal (skipped via SMOKE_SKIP_PUBLISH=1) ---"
+    echo "--- Step 1/4: publishToMavenLocal (skipped via SMOKE_SKIP_PUBLISH=1) ---"
 else
     echo
-    echo "--- Step 1/3: publishToMavenLocal (plugin itself is compiled with its own pinned Kotlin) ---"
+    echo "--- Step 1/4: publishToMavenLocal (plugin itself is compiled with its own pinned Kotlin) ---"
     ./gradlew publishToMavenLocal \
         --no-daemon \
         > "$log_prefix.publish.log" 2>&1 || {
@@ -65,7 +65,7 @@ else
 fi
 
 echo
-echo "--- Step 2/3: build $cmp_workdir with Kotlin=$kotlin_version ---"
+echo "--- Step 2/4: build $cmp_workdir with Kotlin=$kotlin_version ---"
 (
     cd "$cmp_workdir"
     ./gradlew build \
@@ -81,7 +81,7 @@ echo "--- Step 2/3: build $cmp_workdir with Kotlin=$kotlin_version ---"
 echo "ok."
 
 echo
-echo "--- Step 3/3: verify bytecode contains injected Debuggable symbols ---"
+echo "--- Step 3/4: verify bytecode contains injected Debuggable symbols ---"
 class_file="$cmp_workdir/build/classes/kotlin/jvm/main/example/CounterStore.class"
 if [[ ! -f "$class_file" ]]; then
     echo "FAIL: expected class file not found: $class_file" >&2
@@ -107,6 +107,28 @@ if [[ ${#missing[@]} -gt 0 ]]; then
     exit 1
 fi
 echo "ok — bytecode contains: debuggableFlow, logAction"
+
+echo
+echo "--- Step 4/4: build integration-test/kmp-smoke with Kotlin=$kotlin_version ---"
+# kmp-smoke is a plugin + runtime self-test that exercises both `@Debuggable`
+# flow/state tracking and the 0.1.3 setter-override path via an InMemoryLogger,
+# on the JVM target. Native / wasm / js targets are disabled until
+# `.local/tickets/bug-002-native-plugin-classpath.md` is resolved.
+kmp_workdir="${SMOKE_KMP_WORKDIR:-integration-test/kmp-smoke}"
+(
+    cd "$kmp_workdir"
+    ./gradlew jvmTest \
+        "-Pintegration.kotlin=$kotlin_version" \
+        --no-daemon \
+        --refresh-dependencies \
+        --rerun-tasks \
+        > "$repo_root/$log_prefix.kmp-smoke.log" 2>&1
+) || {
+    echo "FAIL: kmp-smoke test failed. See $log_prefix.kmp-smoke.log" >&2
+    tail -50 "$log_prefix.kmp-smoke.log" >&2
+    exit 1
+}
+echo "ok."
 
 echo
 echo "=== [smoke-test] PASS (Kotlin $kotlin_version) ==="

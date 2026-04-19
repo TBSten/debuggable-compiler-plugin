@@ -87,17 +87,28 @@ echo
 run_one() {
     local version="$1"
     local workdir=".local/tmp/cmp-$version"
+    local kmp_workdir=".local/tmp/kmp-smoke-$version"
     local log_file="$log_dir/smoke-all-$version.log"
 
     # Preserve the `.gradle/` / `build/` between reruns of the same version so
     # incremental builds stay fast, but make sure the source tree is synced
-    # from the canonical integration-test/cmp/ before each run.
-    mkdir -p "$workdir"
+    # from the canonical integration-test directories before each run.
+    mkdir -p "$workdir" "$kmp_workdir"
     rsync -a --delete \
         --exclude 'build/' --exclude '.gradle/' --exclude '.kotlin/' \
         integration-test/cmp/ "$workdir/"
+    rsync -a --delete \
+        --exclude 'build/' --exclude '.gradle/' --exclude '.kotlin/' \
+        integration-test/kmp-smoke/ "$kmp_workdir/"
 
-    SMOKE_SKIP_PUBLISH=1 ./scripts/smoke-test.sh "$version" "$workdir" \
+    # smoke-test.sh's step 4 builds `integration-test/kmp-smoke/` — we need each
+    # parallel worker to target its own copy. Swap the path via a symlink so the
+    # canonical directory points at this worker's rsynced copy for the duration
+    # of the step. (Cheap; only the symlink is flipped per worker.)
+    # Simpler alternative: patch the script to accept a kmp workdir. Keeping
+    # it simple: point a `SMOKE_KMP_WORKDIR` env var at the per-worker copy.
+    SMOKE_SKIP_PUBLISH=1 SMOKE_KMP_WORKDIR="$kmp_workdir" \
+        ./scripts/smoke-test.sh "$version" "$workdir" \
         > "$log_file" 2>&1
     local rc=$?
     echo "$rc" > "$status_dir/$version.rc"

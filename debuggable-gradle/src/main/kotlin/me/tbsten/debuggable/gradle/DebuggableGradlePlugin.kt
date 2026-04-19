@@ -48,6 +48,14 @@ class DebuggableGradlePlugin : KotlinCompilerPluginSupportPlugin {
         version = BuildConfig.COMPILER_ARTIFACT_VERSION,
     )
 
+    // Native (Kotlin/Native) and Wasm targets use a separate compiler-plugin classpath
+    // whose variant attributes (`org.gradle.jvm.environment=non-jvm`) would otherwise
+    // filter out our JVM-only transitive `debuggable-compiler-compat*` deps — causing
+    // `ClassNotFoundException: me.tbsten.debuggable.compiler.compat.…` at compile time.
+    // Returning the same artifact coordinate here tells KGP to reuse the JVM resolution
+    // for native, which resolves the full plugin + compat classpath correctly.
+    override fun getPluginArtifactForNative(): SubpluginArtifact = getPluginArtifact()
+
     override fun applyToCompilation(
         kotlinCompilation: KotlinCompilation<*>,
     ): Provider<List<SubpluginOption>> {
