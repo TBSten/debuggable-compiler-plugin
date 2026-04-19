@@ -20,7 +20,7 @@ debuggable-compiler-plugin/
 
 **パッケージ構成:**
 ```
-io.github.tbsten.debuggable.runtime/
+me.tbsten.debuggable.runtime/
 ├── annotations/
 │   ├── Debuggable.kt
 │   ├── FocusDebuggable.kt
@@ -42,7 +42,7 @@ IR 変換の本体。Kotlin Compiler Plugin API を使用。
 
 **パッケージ構成:**
 ```
-io.github.tbsten.debuggable.compiler/
+me.tbsten.debuggable.compiler/
 ├── DebuggableIrGenerationExtension.kt   # エントリポイント
 ├── DebuggableComponentRegistrar.kt
 ├── visitors/
@@ -65,7 +65,7 @@ Gradle Plugin。ビルドタイプ別の有効/無効制御とコンパイラプ
 
 **パッケージ構成:**
 ```
-io.github.tbsten.debuggable.gradle/
+me.tbsten.debuggable.gradle/
 ├── DebuggableGradlePlugin.kt            # Plugin エントリポイント
 └── DebuggableExtension.kt               # DSL 拡張 (enabled フラグ等)
 ```

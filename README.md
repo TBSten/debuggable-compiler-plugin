@@ -148,21 +148,19 @@ A high-level view of what the plugin injects into your classes at compile time. 
 
 #### 5.1 Injecting Cleanup Strategies
 It determines the type of the class and injects runtime unsubscription logic.
-* **ViewModel:** Generates code in the `init` block that creates a `DebugCleanupRegistry` and registers it with `addCloseable`.
-* **AutoCloseable:** Hooks into the `close()` method and inserts a loop at the end that executes all registered cleanup functions.
-* **Local Variable:** Restructures the entire function to be wrapped in a `try-finally` block, executing cleanup inside `finally`.
+* **ViewModel / AutoCloseable:** Adds a private `DebugCleanupRegistry` backing field (initialized inline) and wraps the existing `close()` body in `try { ...original... } finally { registry.close() }`. For ViewModels this fires when `onCleared()` runs (since `ViewModel` implements `AutoCloseable` as of Lifecycle 2.7); for plain `AutoCloseable` it fires on explicit `close()`. If the class inherits `close()` without overriding it, a compile-time warning is emitted instead of silently leaking.
+* **Local Variable:** Restructures the enclosing function so everything after the `@Debuggable` local is wrapped in `try { ... } finally { registry.close() }`, running cleanup on every function-exit path.
 
 #### 5.2 Wrapping Properties
-Initialization expressions for target `State` or `Flow` properties are wrapped with debugging functions provided by the Runtime library.
+Initialization expressions for target `State` or `Flow` properties are wrapped with debugging functions provided by the Runtime library. The wrapper launches a background observation in the registry's coroutine scope and returns the underlying state/flow unchanged.
 
 ```kotlin
 // Before transformation
 val uiState = mutableStateOf(UiState())
 
 // After IR transformation (conceptual)
-val uiState = mutableStateOf(UiState()).also { 
-    debuggableState(host = this, name = "uiState", state = it) 
-}
+val uiState = mutableStateOf(UiState())
+    .debuggableState(name = "uiState", registry = $$debuggable_registry, logger = DefaultDebugLogger)
 ```
 
 #### 5.3 Type-Based Intelligent Detection
@@ -177,6 +175,49 @@ When `enabled.set(false)` is configured on the Gradle plugin side (the default f
 
 ---
 
+### 6. Release Builds & Privacy
+
+> **⚠️ Important:** With default settings, `@Debuggable` logs the current value of every tracked `State` / `Flow` and the full argument list of every annotated action — using each value's `toString()`. That can include tokens, passwords, email addresses, and other personal data. **Do not ship production builds with Debuggable enabled unless you understand this trade-off.**
+
+Recommended configurations:
+
+```kotlin
+// Recommended for most apps — Debuggable only in debug-style builds.
+debuggable {
+    enabled.set(
+        providers.gradleProperty("debuggable.enabled")
+            .map { it.toBoolean() }
+            .orElse(project.findProperty("buildType") != "release"),
+    )
+}
+```
+
+```kotlin
+// Alternative — keep the plugin enabled but silence output in release.
+// Useful if you want the cleanup side of the injection (AutoCloseable /
+// try-finally registry.close()) without the logs.
+import me.tbsten.debuggable.runtime.logging.SilentLogger
+
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (BuildConfig.BUILD_TYPE == "release") {
+            DefaultDebugLogger.current = SilentLogger
+        }
+    }
+}
+```
+
+Per-property / per-class opt-outs:
+
+- `@IgnoreDebuggable` on a property to exclude a single `State` / `Flow` from tracking.
+- `@Debuggable(logger = MyLogger::class)` with `MyLogger` redacting sensitive values before forwarding to Logcat / stdout.
+- `@FocusDebuggable` to flip a class into "only these properties" mode — everything else is ignored.
+
+R8 / ProGuard: the runtime AAR ships consumer rules under `META-INF/proguard/debuggable-runtime.pro`, so Android consumers don't need any keep rules of their own. The injected calls survive minification automatically.
+
+---
+
 ## 🔍 How It Works
 
 Behaviors the plugin automatically manages for you. Reading this section helps you predict when your logs will appear and how to filter what gets tracked.
@@ -186,7 +227,7 @@ The observation lifecycle is automatically determined based on the nature of the
 
 | Target | Condition | Cleanup Timing |
 | :--- | :--- | :--- |
-| **ViewModel** | Inherits from `ViewModel` | `onCleared()` (uses `addCloseable` internally) |
+| **ViewModel** | Inherits from `ViewModel` | `onCleared()` (via the `AutoCloseable.close()` that `ViewModel` implements as of Lifecycle 2.7) |
 | **AutoCloseable** | Implements `AutoCloseable` | When the `close()` method is executed |
 | **Singleton** | `isSingleton = true` | None (persists until process termination) |
 | **Local Variable** | Variable inside a function | When function execution ends (Scope Exit) |
