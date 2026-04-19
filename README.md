@@ -37,11 +37,11 @@ Then apply the plugin and add the runtime dependency in your module's `build.gra
 ```kotlin
 plugins {
     kotlin("jvm") // or kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.4"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.4")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.4"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.4")
         }
     }
 }
@@ -138,6 +138,24 @@ class MyApp : Application() {
 | `CompositeLogger(vararg loggers)` | commonMain | Fans out every message to multiple sinks (e.g. keep stdout while also capturing in memory). |
 | `FileLogger(file, append)` | jvm + androidMain | Appends each message as a line to a `java.io.File`. Thread-safe; creates parent dirs; flushes per write. |
 | `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)`. Default tag is `"Debuggable"`. Default on Android. |
+
+**In-app log viewer** (optional module `debuggable-ui`):
+
+```kotlin
+implementation("me.tbsten.debuggablecompilerplugin:debuggable-ui:0.1.4")
+```
+
+```kotlin
+val uiLogger = remember { UiDebugLogger(bufferSize = 500) }
+DisposableEffect(uiLogger) {
+    val prev = DefaultDebugLogger.current
+    DefaultDebugLogger.current = uiLogger
+    onDispose { DefaultDebugLogger.current = prev }
+}
+DebuggableLogViewer(uiLogger, modifier = Modifier.fillMaxSize())
+```
+
+`UiDebugLogger` maintains a ring buffer (default 1000 entries) as a `StateFlow`, and `DebuggableLogViewer` is a Compose Multiplatform composable that renders it with built-in substring filtering and auto-scroll. Currently ships for `jvm` + `androidTarget` — other KMP targets are follow-ups.
 
 ### 4. Configuration
 
@@ -290,7 +308,7 @@ From the repo root:
 ./gradlew publishToMavenLocal
 ```
 
-This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.3`) into `~/.m2/`.
+This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.4`) into `~/.m2/`.
 
 ### 2. Pick a sample
 

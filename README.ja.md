@@ -37,11 +37,11 @@ dependencyResolutionManagement {
 ```kotlin
 plugins {
     kotlin("jvm") // もしくは kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.4"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.4")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.4"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.4")
         }
     }
 }
@@ -139,6 +139,24 @@ class MyApp : Application() {
 | `CompositeLogger(vararg loggers)` | commonMain | 複数の sink にメッセージを fan-out (例: stdout + InMemory を同時に) |
 | `FileLogger(file, append)` | jvm + androidMain | `java.io.File` に 1 行ずつ append。thread-safe、親ディレクトリ自動作成、write 毎に flush |
 | `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)` に流す。デフォルトタグは `"Debuggable"`。Android のデフォルト |
+
+**アプリ内ログビューア** (オプションモジュール `debuggable-ui`):
+
+```kotlin
+implementation("me.tbsten.debuggablecompilerplugin:debuggable-ui:0.1.4")
+```
+
+```kotlin
+val uiLogger = remember { UiDebugLogger(bufferSize = 500) }
+DisposableEffect(uiLogger) {
+    val prev = DefaultDebugLogger.current
+    DefaultDebugLogger.current = uiLogger
+    onDispose { DefaultDebugLogger.current = prev }
+}
+DebuggableLogViewer(uiLogger, modifier = Modifier.fillMaxSize())
+```
+
+`UiDebugLogger` はリングバッファ (デフォルト 1000 件) を `StateFlow` として公開し、`DebuggableLogViewer` は Compose Multiplatform で描画する Composable です。部分一致フィルタと auto-scroll を標準装備。現状は `jvm` + `androidTarget` のみ対応 (他 KMP target は別 chapter)。
 
 ### 4. Configuration
 
@@ -290,7 +308,7 @@ class ComplexViewModel : ViewModel() {
 ./gradlew publishToMavenLocal
 ```
 
-これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.3`) が `~/.m2/` にインストールされます。
+これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.4`) が `~/.m2/` にインストールされます。
 
 ### 2. サンプルを選ぶ
 

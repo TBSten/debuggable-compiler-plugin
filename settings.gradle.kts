@@ -32,6 +32,7 @@ dependencyResolutionManagement {
     }
 }
 include(":debuggable-runtime")
+include(":debuggable-ui")
 include(":debuggable-compiler")
 // Per-Kotlin-version IR impl modules, nested under `:debuggable-compiler` to
 // reflect their "part of the compiler plugin" status. Maven artifact IDs still

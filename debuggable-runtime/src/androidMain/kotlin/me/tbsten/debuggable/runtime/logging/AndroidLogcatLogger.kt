@@ -19,7 +19,7 @@ import android.util.Log
  * The default [AndroidLogcatLogger] object uses the tag `"Debuggable"`.
  * Use the constructor to pass a custom tag.
  */
-class AndroidLogcatLogger(private val tag: String) : DebugLogger {
+open class AndroidLogcatLogger(private val tag: String) : DebugLogger {
     override fun log(message: String) {
         Log.d(tag, message)
     }

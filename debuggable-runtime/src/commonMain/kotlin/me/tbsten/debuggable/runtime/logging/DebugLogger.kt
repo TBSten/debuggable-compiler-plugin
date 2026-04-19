@@ -11,8 +11,17 @@ package me.tbsten.debuggable.runtime.logging
 fun interface DebugLogger {
     fun log(message: String)
 
-    companion object {
-        /** Default implementation that prints to stdout with a `[Debuggable]` prefix. */
-        val Stdout: DebugLogger = DebugLogger { println("[Debuggable] $it") }
+    /**
+     * Default implementation that prints to stdout with a `[Debuggable]` prefix.
+     *
+     * Declared as a nested `object` (not a property) so it satisfies the
+     * `@Debuggable(logger = …)` requirement of being a singleton object —
+     * needed on Android / JVM consumers that want to opt into this sink
+     * explicitly rather than relying on the platform default.
+     */
+    object Stdout : DebugLogger {
+        override fun log(message: String) {
+            println("[Debuggable] $message")
+        }
     }
 }

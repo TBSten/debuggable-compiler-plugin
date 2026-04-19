@@ -6,7 +6,7 @@ plugins {
     id("me.tbsten.debuggablecompilerplugin")
 }
 
-val debuggableVersion: String = (findProperty("integration.debuggable") as String?) ?: "0.1.3"
+val debuggableVersion: String = (findProperty("integration.debuggable") as String?) ?: "0.1.4"
 val coroutinesVersion = "1.9.0"
 
 kotlin {
