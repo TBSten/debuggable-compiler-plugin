@@ -17,12 +17,17 @@ public final class me/tbsten/debuggable/runtime/extensions/FlowExtensionsKt {
 	public static synthetic fun debuggableFlow$default (Lkotlinx/coroutines/flow/Flow;Ljava/lang/String;Lme/tbsten/debuggable/runtime/registry/DebugCleanupRegistry;Lme/tbsten/debuggable/runtime/logging/DebugLogger;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 }
 
+public final class me/tbsten/debuggable/runtime/extensions/PropertySetExtensionsKt {
+	public static final fun debuggableSet (Ljava/lang/String;Ljava/lang/Object;Lme/tbsten/debuggable/runtime/logging/DebugLogger;)Ljava/lang/Object;
+	public static synthetic fun debuggableSet$default (Ljava/lang/String;Ljava/lang/Object;Lme/tbsten/debuggable/runtime/logging/DebugLogger;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class me/tbsten/debuggable/runtime/extensions/StateExtensionsKt {
 	public static final fun debuggableState (Landroidx/compose/runtime/State;Ljava/lang/String;Lme/tbsten/debuggable/runtime/registry/DebugCleanupRegistry;Lme/tbsten/debuggable/runtime/logging/DebugLogger;)Landroidx/compose/runtime/State;
 	public static synthetic fun debuggableState$default (Landroidx/compose/runtime/State;Ljava/lang/String;Lme/tbsten/debuggable/runtime/registry/DebugCleanupRegistry;Lme/tbsten/debuggable/runtime/logging/DebugLogger;ILjava/lang/Object;)Landroidx/compose/runtime/State;
 }
 
-public final class me/tbsten/debuggable/runtime/logging/AndroidLogcatLogger : me/tbsten/debuggable/runtime/logging/DebugLogger {
+public class me/tbsten/debuggable/runtime/logging/AndroidLogcatLogger : me/tbsten/debuggable/runtime/logging/DebugLogger {
 	public static final field $stable I
 	public static final field Companion Lme/tbsten/debuggable/runtime/logging/AndroidLogcatLogger$Companion;
 	public fun <init> (Ljava/lang/String;)V
@@ -33,13 +38,21 @@ public final class me/tbsten/debuggable/runtime/logging/AndroidLogcatLogger$Comp
 	public fun log (Ljava/lang/String;)V
 }
 
+public final class me/tbsten/debuggable/runtime/logging/CompositeLogger : me/tbsten/debuggable/runtime/logging/DebugLogger {
+	public static final field $stable I
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> ([Lme/tbsten/debuggable/runtime/logging/DebugLogger;)V
+	public fun log (Ljava/lang/String;)V
+}
+
 public abstract interface class me/tbsten/debuggable/runtime/logging/DebugLogger {
-	public static final field Companion Lme/tbsten/debuggable/runtime/logging/DebugLogger$Companion;
 	public abstract fun log (Ljava/lang/String;)V
 }
 
-public final class me/tbsten/debuggable/runtime/logging/DebugLogger$Companion {
-	public final fun getStdout ()Lme/tbsten/debuggable/runtime/logging/DebugLogger;
+public final class me/tbsten/debuggable/runtime/logging/DebugLogger$Stdout : me/tbsten/debuggable/runtime/logging/DebugLogger {
+	public static final field $stable I
+	public static final field INSTANCE Lme/tbsten/debuggable/runtime/logging/DebugLogger$Stdout;
+	public fun log (Ljava/lang/String;)V
 }
 
 public final class me/tbsten/debuggable/runtime/logging/DefaultDebugLogger : me/tbsten/debuggable/runtime/logging/DebugLogger {
@@ -48,6 +61,22 @@ public final class me/tbsten/debuggable/runtime/logging/DefaultDebugLogger : me/
 	public final fun getCurrent ()Lme/tbsten/debuggable/runtime/logging/DebugLogger;
 	public fun log (Ljava/lang/String;)V
 	public final fun setCurrent (Lme/tbsten/debuggable/runtime/logging/DebugLogger;)V
+}
+
+public final class me/tbsten/debuggable/runtime/logging/FileLogger : me/tbsten/debuggable/runtime/logging/DebugLogger {
+	public static final field $stable I
+	public fun <init> (Ljava/io/File;Z)V
+	public synthetic fun <init> (Ljava/io/File;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun log (Ljava/lang/String;)V
+}
+
+public final class me/tbsten/debuggable/runtime/logging/InMemoryLogger : me/tbsten/debuggable/runtime/logging/DebugLogger {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun clear ()V
+	public final fun getMessages ()Ljava/util/List;
+	public fun log (Ljava/lang/String;)V
+	public final fun snapshot ()Ljava/util/List;
 }
 
 public final class me/tbsten/debuggable/runtime/logging/LoggingKt {
