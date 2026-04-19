@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
     alias(libs.plugins.buildconfig)
     alias(libs.plugins.maven.publish)
+    alias(libs.plugins.shadow)
 }
 
 kotlin {
@@ -79,14 +80,33 @@ dependencies {
     testImplementation(libs.kotlin.stdlib) { version { strictly(testKotlinVersion) } }
     compileOnly(libs.kotlin.compiler.embeddable)
 
-    // Abstract IR injection API + ServiceLoader discovery. Per-version
-    // implementations (`debuggable-compiler-compat-kXX`) are brought in as
-    // `runtimeOnly` so their bytecode stays out of compile-time resolution.
-    implementation(project(":debuggable-compiler:compat"))
-    runtimeOnly(project(":debuggable-compiler:compat:k23"))
-    runtimeOnly(project(":debuggable-compiler:compat:k21"))
-    runtimeOnly(project(":debuggable-compiler:compat:k2020"))
-    runtimeOnly(project(":debuggable-compiler:compat:k2000"))
+    // Abstract IR injection API + ServiceLoader discovery, plus the four
+    // per-Kotlin-version IR implementations. All five are bundled DIRECTLY
+    // into `debuggable-compiler.jar` via the `jar` task below (see comment
+    // there), so `compileOnly` — the classes are on the compile classpath
+    // for this module's own sources, but NOT declared as published deps
+    // (POM / Gradle Module Metadata). A self-contained JAR lets KMP non-JVM
+    // targets (native / wasmJs / js) load the plugin: their
+    // `kotlinCompilerPluginClasspath*` configurations filter transitive
+    // JVM-only deps (`org.gradle.jvm.environment = standard-jvm`) and would
+    // otherwise fail at IR generation with
+    // `ClassNotFoundException: …compat.MessageCollectorHolder` or
+    // `No IrInjector.Factory found on classpath`.
+    compileOnly(project(":debuggable-compiler:compat"))
+    compileOnly(project(":debuggable-compiler:compat:k23"))
+    compileOnly(project(":debuggable-compiler:compat:k21"))
+    compileOnly(project(":debuggable-compiler:compat:k2020"))
+    compileOnly(project(":debuggable-compiler:compat:k2000"))
+
+    // Test classpath still needs the compat impls at runtime — CompilerTestHelper
+    // loads DebuggableCompilerPluginRegistrar in-process and ServiceLoader-discovers
+    // the factories from the test JVM classpath. Published consumers get all of
+    // these from the shadowJar bundle.
+    testRuntimeOnly(project(":debuggable-compiler:compat"))
+    testRuntimeOnly(project(":debuggable-compiler:compat:k23"))
+    testRuntimeOnly(project(":debuggable-compiler:compat:k21"))
+    testRuntimeOnly(project(":debuggable-compiler:compat:k2020"))
+    testRuntimeOnly(project(":debuggable-compiler:compat:k2000"))
 
     // Version-matched test toolchain — see `testKotlinVersion` / `kctforkForKotlin`
     // at the top of this file.
@@ -103,6 +123,62 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Bundle the shared `debuggable-compiler-compat` classes into this JAR. See
+// the `compileOnly(project(":...:compat"))` comment above for why — the short
+// version: KMP non-JVM targets filter out the separate compat artifact, so we
+// make the compiler plugin JAR self-contained.
+// Bundle the shared compat module + all four per-Kotlin-version implementations
+// (+ their META-INF/services ServiceLoader registrations) directly into the
+// published JAR, making it a self-contained compiler plugin that works on
+// every KMP target's compiler-plugin-classpath — not just JVM. A custom
+// `bundled` configuration carries them so shadowJar can pick them up without
+// leaking the deps into the published POM / Module Metadata (declared
+// `compileOnly` above).
+val bundled by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+dependencies {
+    bundled(project(":debuggable-compiler:compat"))
+    bundled(project(":debuggable-compiler:compat:k23"))
+    bundled(project(":debuggable-compiler:compat:k21"))
+    bundled(project(":debuggable-compiler:compat:k2020"))
+    bundled(project(":debuggable-compiler:compat:k2000"))
+}
+
+tasks.shadowJar {
+    configurations = listOf(bundled)       // only include compat, not stdlib / kotlinc
+    mergeServiceFiles()                    // merge ServiceLoader registrations
+    dependsOn(tasks.jar)
+    exclude("META-INF/*.kotlin_module")
+    exclude("META-INF/MANIFEST.MF")
+}
+
+// Replace the plain `jar` with the shadow jar as the single primary artifact.
+// Approach: shadowJar writes directly to the `archiveClassifier = ""` slot
+// (same place the plain `jar` would land) and we disable the plain jar so
+// there's no duplicate artifact for the `java` component metadata generator
+// to trip over. Gradle Module Metadata is also disabled for this module —
+// the Gradle plugin marker + its POM is what consumers actually resolve via
+// `id("me.tbsten.debuggablecompilerplugin")`, and skipping .module here avoids
+// the "artifact from the 'java' component has been removed" error that comes
+// with swapping a component's main artifact.
+tasks.shadowJar {
+    archiveClassifier.set("")
+}
+tasks.jar {
+    archiveClassifier.set("thin")
+    // Without the `thin` classifier the plain jar would clash with shadow jar's
+    // output path. Keeping the task enabled (Gradle expects artifacts in the
+    // component even if we publish via shadowJar) but stashing it under a
+    // non-published classifier.
+}
+tasks.named("assemble") { dependsOn(tasks.shadowJar) }
+
+tasks.withType<GenerateModuleMetadata>().configureEach {
+    enabled = false
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

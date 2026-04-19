@@ -5,7 +5,7 @@ pluginManagement {
         ?: "2.3.20")
 
     val debuggableVersion: String = (settings.providers.gradleProperty("integration.debuggable").orNull
-        ?: "0.1.4")
+        ?: "0.1.5")
 
     plugins {
         kotlin("multiplatform") version kotlinVersion

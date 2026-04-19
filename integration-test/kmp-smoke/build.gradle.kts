@@ -6,7 +6,7 @@ plugins {
     id("me.tbsten.debuggablecompilerplugin")
 }
 
-val debuggableVersion: String = (findProperty("integration.debuggable") as String?) ?: "0.1.4"
+val debuggableVersion: String = (findProperty("integration.debuggable") as String?) ?: "0.1.5"
 val coroutinesVersion = "1.9.0"
 
 kotlin {
@@ -19,13 +19,13 @@ kotlin {
     jvm {
         compilerOptions { jvmTarget = JvmTarget.JVM_17 }
     }
-    // TODO native / wasmJs / js targets: the Kotlin Gradle plugin resolves
-    //   `kotlinCompilerPluginClasspath*` for non-JVM targets with
-    //   `org.gradle.jvm.environment ≠ standard-jvm`, which filters out the
-    //   shared `debuggable-compiler-compat` module (published as JVM-only) and
-    //   causes `ClassNotFoundException: …compat.MessageCollectorHolder` during
-    //   native compile. Tracked in `.local/tickets/bug-002-native-plugin-classpath.md`.
-    //   Once fixed, re-enable these targets here.
+    js { nodejs() }
+    wasmJs { nodejs() }
+    iosArm64()
+    iosSimulatorArm64()
+    macosArm64()
+    linuxX64()
+    mingwX64()
 
     sourceSets {
         commonMain.dependencies {

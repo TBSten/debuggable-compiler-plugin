@@ -109,15 +109,26 @@ fi
 echo "ok — bytecode contains: debuggableFlow, logAction"
 
 echo
-echo "--- Step 4/4: build integration-test/kmp-smoke with Kotlin=$kotlin_version ---"
-# kmp-smoke is a plugin + runtime self-test that exercises both `@Debuggable`
-# flow/state tracking and the 0.1.3 setter-override path via an InMemoryLogger,
-# on the JVM target. Native / wasm / js targets are disabled until
-# `.local/tickets/bug-002-native-plugin-classpath.md` is resolved.
+echo "--- Step 4/4: build integration-test/kmp-smoke (all KMP targets) with Kotlin=$kotlin_version ---"
+# kmp-smoke exercises `@Debuggable` + `@FocusDebuggable var` + logAction via an
+# InMemoryLogger. `jvmTest` asserts runtime behaviour; the per-target
+# `compileKotlin<Target>` checks that the plugin JAR is self-contained enough
+# to run on every KMP target's compiler-plugin-classpath (native / wasmJs / js
+# filter out JVM-only transitive deps — fixed by shadowing compat into the
+# main plugin JAR, tracked as `done/bug-002-native-plugin-classpath.md`).
 kmp_workdir="${SMOKE_KMP_WORKDIR:-integration-test/kmp-smoke}"
 (
     cd "$kmp_workdir"
-    ./gradlew jvmTest \
+    ./gradlew \
+        jvmTest \
+        compileKotlinJvm \
+        compileKotlinJs \
+        compileKotlinWasmJs \
+        compileKotlinIosArm64 \
+        compileKotlinIosSimulatorArm64 \
+        compileKotlinMacosArm64 \
+        compileKotlinLinuxX64 \
+        compileKotlinMingwX64 \
         "-Pintegration.kotlin=$kotlin_version" \
         --no-daemon \
         --refresh-dependencies \
