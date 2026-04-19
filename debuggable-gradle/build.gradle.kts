@@ -1,8 +1,23 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     `java-gradle-plugin`
     alias(libs.plugins.buildconfig)
     alias(libs.plugins.maven.publish)
+}
+
+kotlin {
+    // Gradle 8's minimum JDK is 17. Emit Java 17 bytecode so daemons on JDK 17
+    // can load the plugin, even when this module is published from CI's JDK 21.
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 val debuggablePluginId = project.property("debuggable.pluginId") as String

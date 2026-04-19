@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -12,7 +13,13 @@ kotlin {
     compilerOptions {
         apiVersion = KotlinVersion.KOTLIN_2_0
         languageVersion = KotlinVersion.KOTLIN_2_0
+        jvmTarget = JvmTarget.JVM_17
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 val debuggablePluginId = project.property("debuggable.pluginId") as String

@@ -37,11 +37,11 @@ dependencyResolutionManagement {
 ```kotlin
 plugins {
     kotlin("jvm") // もしくは kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
         }
     }
 }
@@ -235,7 +235,7 @@ class ComplexViewModel : ViewModel() {
 ./gradlew publishToMavenLocal
 ```
 
-これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.0`) が `~/.m2/` にインストールされます。
+これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.1`) が `~/.m2/` にインストールされます。
 
 ### 2. サンプルを選ぶ
 

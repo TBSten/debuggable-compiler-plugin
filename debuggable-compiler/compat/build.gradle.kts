@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -12,7 +13,14 @@ kotlin {
     compilerOptions {
         apiVersion = KotlinVersion.KOTLIN_2_0
         languageVersion = KotlinVersion.KOTLIN_2_0
+        // Match Gradle 8's minimum JDK (17) so daemons on JDK 17 can load this JAR.
+        jvmTarget = JvmTarget.JVM_17
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 // Coordinates, license, developer, SCM, etc. come from the root build.gradle.kts.

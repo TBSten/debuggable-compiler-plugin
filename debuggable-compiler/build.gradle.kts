@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -13,7 +14,16 @@ kotlin {
     compilerOptions {
         apiVersion = KotlinVersion.KOTLIN_2_0
         languageVersion = KotlinVersion.KOTLIN_2_0
+        // Target Java 17 bytecode so Gradle daemons on JDK 17 (Gradle 8's minimum)
+        // can load this compiler plugin JAR. Publishing from CI's JDK 21 without
+        // this would emit class-file major 65, rejected by JDK 17.
+        jvmTarget = JvmTarget.JVM_17
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 val debuggablePluginId = project.property("debuggable.pluginId") as String

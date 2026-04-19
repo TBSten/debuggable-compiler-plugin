@@ -37,11 +37,11 @@ Then apply the plugin and add the runtime dependency in your module's `build.gra
 ```kotlin
 plugins {
     kotlin("jvm") // or kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.1"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.1")
         }
     }
 }
@@ -234,7 +234,7 @@ From the repo root:
 ./gradlew publishToMavenLocal
 ```
 
-This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.0`) into `~/.m2/`.
+This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.1`) into `~/.m2/`.
 
 ### 2. Pick a sample
 
