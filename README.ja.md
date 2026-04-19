@@ -286,6 +286,19 @@ class ComplexViewModel : ViewModel() {
 
 それぞれの README に起動方法・何をクリックするか・`@Debuggable` がソースのどこに付いているかが書かれています。サイドバイサイドの概要は [`integration-test/README.md`](integration-test/README.md) を参照してください。
 
+### 3. マトリクス全体をローカルで実行 (任意)
+
+検証スクリプトは並列モードに対応しており、ローカルマシンで CI のマトリクスを再現できます。
+
+```bash
+./scripts/smoke-test-all.sh              # 並列 (デフォルト: min(nproc/2, 4))
+./scripts/smoke-test-all.sh --serial     # 1 バージョンずつ直列実行 (デバッグしやすい)
+./scripts/smoke-test-all.sh --parallel 6 # ワーカー数を指定
+DEBUGGABLE_PARALLEL=6 ./scripts/test-all.sh
+```
+
+各ワーカーは rsync で作成したプロジェクトコピー (`.local/tmp/…`) 内で Gradle を実行するため、`build/` の衝突は発生しません。バージョンごとのログは `.local/tmp/{smoke,test}-all-<version>.log` に出力されます。
+
 ---
 
 ## 🧷 サポート Kotlin バージョン

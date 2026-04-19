@@ -286,6 +286,19 @@ This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradl
 
 Each sample README explains how to run it, what to click, and where in the source the `@Debuggable` annotation is applied. See [`integration-test/README.md`](integration-test/README.md) for a side-by-side summary.
 
+### 3. Run the full matrix locally (optional)
+
+Both verification scripts support a parallel mode that mirrors CI's matrix on a single machine:
+
+```bash
+./scripts/smoke-test-all.sh              # parallel (default: min(nproc/2, 4))
+./scripts/smoke-test-all.sh --serial     # one version at a time (easier to debug)
+./scripts/smoke-test-all.sh --parallel 6 # override worker count
+DEBUGGABLE_PARALLEL=6 ./scripts/test-all.sh
+```
+
+Each worker runs in an isolated rsync'd copy of the project (`.local/tmp/…`) so parallel Gradle invocations don't collide on `build/`. Per-version logs land in `.local/tmp/{smoke,test}-all-<version>.log`.
+
 ---
 
 ## 🧷 Supported Kotlin Versions
