@@ -346,6 +346,30 @@ class FocusIgnoreTests : CompilerTestBase() {
             "Expected error: @Debuggable on non-ViewModel/non-AutoCloseable without isSingleton=true")
     }
 
+    @Test fun `FocusDebuggable on class without @Debuggable emits stray annotation warning`() {
+        // Catches a common typo: user adds @FocusDebuggable to properties but
+        // forgets @Debuggable on the enclosing class. Without the warning the
+        // annotations are silently ignored — the exact "silent no-op" mode of
+        // failure the README promises against.
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+            import kotlinx.coroutines.flow.MutableStateFlow
+            // Note: no @Debuggable on this class
+            class StrayFocus {
+                @FocusDebuggable val flow = MutableStateFlow(0)
+            }
+            """.trimIndent(),
+        )
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        assertTrue(
+            result.messages.contains("not annotated with @Debuggable") ||
+                result.messages.contains("Did you forget @Debuggable"),
+            "Expected stray-annotation warning, got: ${result.messages}",
+        )
+    }
+
     @Test fun `FocusDebuggable on non-Flow property is compilation warning`() {
         // TODO: Phase 10 (Error/Warning 整備) で有効化
         // Currently compiles without warning; after Phase 10 should produce a WARNING
