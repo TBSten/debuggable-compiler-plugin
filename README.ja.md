@@ -8,7 +8,65 @@
 
 ## 🛠 使い方 (User Guide)
 
-### 1. 基本的な使用方法
+### 1. インストール
+
+Maven Central で配布しています。必要なのは 2 つ: Gradle プラグイン (コンパイラプラグインを自動で適用) と runtime ライブラリ (注入されたコードの呼び出し先)。
+
+まず `mavenCentral()` をプラグイン解決・依存解決の両方に追加:
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google() // Android の場合のみ
+    }
+}
+```
+
+モジュールの `build.gradle.kts` でプラグインを適用し、runtime を依存に追加:
+
+**Kotlin/JVM, Android, KMP (JVM ターゲット)**
+
+```kotlin
+plugins {
+    kotlin("jvm") // もしくは kotlin("android"), kotlin("multiplatform")
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+}
+
+dependencies {
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+}
+```
+
+**Kotlin Multiplatform (common ソースセット)**
+
+```kotlin
+plugins {
+    kotlin("multiplatform")
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+        }
+    }
+}
+```
+
+runtime は `jvm` / `androidTarget` / `js` / `wasmJs` / `iosArm64` / `iosSimulatorArm64` / `macosArm64` / `linuxX64` / `mingwX64` 向けに publish されています。
+
+Android ではデフォルトで Logcat にタグ `"Debuggable"` で出力されます (`AndroidLogcatLogger`)。それ以外のプラットフォームでは `[Debuggable]` プレフィックス付きで stdout に出ます。出力先の変更方法は [§3 ロガーの差し替え](#3-ロガーの差し替え) を参照。
+
+### 2. 基本的な使用方法
 `@Debuggable` をクラスに付与するだけで、その中の `State` と `Flow` が自動的にトラッキングされます。
 
 ```kotlin
@@ -23,7 +81,108 @@ class SearchViewModel : ViewModel() {
 }
 ```
 
-### 2. メモリ管理とクリーンアップ
+### 3. ロガーの差し替え
+
+デフォルトでは Android は Logcat (タグ `"Debuggable"`)、それ以外は stdout に `[Debuggable]` プレフィックス付きで出力されます。Timber、ファイル出力、テスト収集、Logcat 以外のタグなど任意の出力先に切り替えられます。
+指定方法は 3 つあり、上位が優先されます。
+
+| 優先度 | 指定方法 | 適用範囲 |
+| :--- | :--- | :--- |
+| 1 | `@Debuggable(logger = MyLogger::class)` | アノテーションを付けたクラス / 変数 |
+| 2 | Gradle DSL `debuggable { defaultLogger.set("FQN") }` | モジュール全体 (コンパイル時固定) |
+| 3 | `DefaultDebugLogger.current = DebugLogger { ... }` | プロセス全体 (ランタイム差し替え) |
+| 4 | プラットフォームデフォルト (Android: Logcat / その他: stdout) | — |
+
+ロガーに渡せるのは `DebugLogger` を実装した `object` 宣言に限られます。
+
+```kotlin
+import me.tbsten.debuggable.runtime.logging.*
+
+// (1) 特定クラスだけ別ロガーに流す
+object AuthLogger : DebugLogger {
+    override fun log(message: String) = Log.d("Auth", message)
+}
+
+@Debuggable(isSingleton = true, logger = AuthLogger::class)
+object AuthStore { /* ... */ }
+
+// (2) モジュール全体を Gradle DSL で指定 — セクション 4 参照
+// (3) アプリ起動時にプロセス全体を差し替える
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        DefaultDebugLogger.current = AndroidLogcatLogger   // 組み込みロガー
+    }
+}
+```
+
+**組み込みロガー** (`debuggable-runtime` に同梱):
+
+| ロガー | ソースセット | 説明 |
+| :--- | :--- | :--- |
+| `DebugLogger.Stdout` | commonMain | `println("[Debuggable] ...")` 出力。Android 以外のデフォルト |
+| `SilentLogger` | commonMain | 何も出力しない sink。プラグインを無効化せず出力だけ止めたい場合に |
+| `PrefixedLogger(prefix, delegate)` | commonMain | プレフィックスを追加して別の `DebugLogger` に委譲 |
+| `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)` に流す。デフォルトタグは `"Debuggable"`。Android のデフォルト |
+
+### 4. Configuration
+
+Gradle プラグインは機能単位のトグルとコンパイル時デフォルトロガーを提供し、プラグイン全体を
+無効化せず特定の計測を個別に OFF / 差し替えできます。
+
+```kotlin
+debuggable {
+    enabled.set(true)          // マスタースイッチ（デフォルト: true）
+    observeFlow.set(true)      // Flow/State イニシャライザのラップ（デフォルト: true）
+    logAction.set(true)        // public メソッド呼び出しのログ（デフォルト: true）
+    defaultLogger.set("")      // モジュール全体の default として使う DebugLogger object の FQN
+                               // (空文字 = DefaultDebugLogger。その場合はランタイムで差し替え可能)
+                               // 例: defaultLogger.set("com.example.myapp.MyDebugLogger")
+}
+```
+
+`enabled = false` の場合プラグインは完全な no-op になり、IR 変換も行わず Runtime 依存も残りません。
+`observeFlow` / `logAction` を個別に無効化すると、その変換だけがスキップされ他の機能はそのまま動作します。
+
+### 5. 内部メカニズム
+
+プラグインがコンパイル時に注入する内容のざっくりした全体像です。`@Debuggable` を使うだけなら知らなくても良いですが、挙動に疑問があるときはこのセクションが手がかりになります。
+
+#### 5.1 クリーンアップ戦略の注入
+クラスの型を判定し、実行時の監視解除ロジックを注入します。
+* **ViewModel:** `init` ブロックで `DebugCleanupRegistry` を生成し、`addCloseable` に登録するコードを生成します。
+* **AutoCloseable:** `close()` メソッドをフックし、その末尾に登録されたクリーンアップ関数をすべて実行するループを挿入します。
+* **Local Variable:** 関数全体を `try-finally` ブロックでラップするように再構成し、`finally` 内でクリーンアップを実行します。
+
+#### 5.2 プロパティのラップ
+対象となる `State` や `Flow` の初期化式を、Runtimeライブラリが提供するデバッグ用関数でラップします。
+
+```kotlin
+// 変換前
+val uiState = mutableStateOf(UiState())
+
+// IR変換後 (概念)
+val uiState = mutableStateOf(UiState()).also { 
+    debuggableState(host = this, name = "uiState", state = it) 
+}
+```
+
+#### 5.3 型ベースのインテリジェント判定
+コンパイラはプロパティの完全修飾クラス名 (FQDN) をチェックし、追跡可能な型かどうかを判定します。
+* `androidx.compose.runtime.State` / `MutableState`
+* `kotlinx.coroutines.flow.Flow` / `StateFlow` / `MutableStateFlow`
+  これら以外の型に `@FocusDebuggable` 等が付与されている場合は、コンパイル時に警告を出力します。
+
+#### 5.4 リリース時のゼロ・オーバーヘッド
+Gradleプラグイン側で `enabled.set(false)` に設定されている場合（デフォルトでは Release ビルド）、KCP は IR 変換を一切行いません。本番環境のバイナリにはデバッグ用のコードや Runtime ライブラリの依存が一切残らないため、パフォーマンスへの影響はありません。
+
+---
+
+## 🔍 仕組み
+
+プラグインが自動で面倒を見てくれる振る舞い。ログがいつ出るのか / 何が追跡対象になるのかを予測するのに役立ちます。
+
+### 1. メモリ管理とクリーンアップ
 監視のライフサイクルはクラスの性質に応じて自動的に決定されます。
 
 | 対象 | 条件 | クリーンアップのタイミング |
@@ -46,7 +205,7 @@ fun performTask() {
 class GlobalSettings { ... }
 ```
 
-### 3. トラッキングのフィルタリング
+### 2. トラッキングのフィルタリング
 特定のプロパティだけに注目したり、ノイズを除外したりできます。
 
 ```kotlin
@@ -61,104 +220,6 @@ class ComplexViewModel : ViewModel() {
     val noiseState = mutableStateOf("")
 }
 ```
-
-### 4. ロガーの差し替え
-
-デフォルトでは `@Debuggable` は `[Debuggable]` プレフィックス付きで標準出力にログを出します。
-Android Logcat、Timber、ファイル出力、テスト収集など任意の出力先に切り替えられます。
-指定方法は 3 つあり、上位が優先されます。
-
-| 優先度 | 指定方法 | 適用範囲 |
-| :--- | :--- | :--- |
-| 1 | `@Debuggable(logger = MyLogger::class)` | アノテーションを付けたクラス / 変数 |
-| 2 | Gradle DSL `debuggable { defaultLogger.set("FQN") }` | モジュール全体 (コンパイル時固定) |
-| 3 | `DefaultDebugLogger.current = DebugLogger { ... }` | プロセス全体 (ランタイム差し替え) |
-| 4 | `DebugLogger.Stdout` (組み込みのフォールバック) | — |
-
-ロガーに渡せるのは `DebugLogger` を実装した `object` 宣言に限られます。
-
-```kotlin
-import me.tbsten.debuggable.runtime.logging.*
-
-// (1) 特定クラスだけ別ロガーに流す
-object AuthLogger : DebugLogger {
-    override fun log(message: String) = Log.d("Auth", message)
-}
-
-@Debuggable(isSingleton = true, logger = AuthLogger::class)
-object AuthStore { /* ... */ }
-
-// (2) モジュール全体を Gradle DSL で指定 — セクション 5 参照
-// (3) アプリ起動時にプロセス全体を差し替える
-class MyApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        DefaultDebugLogger.current = AndroidLogcatLogger   // 組み込みロガー
-    }
-}
-```
-
-**組み込みロガー** (`debuggable-runtime` に同梱):
-
-| ロガー | ソースセット | 説明 |
-| :--- | :--- | :--- |
-| `DebugLogger.Stdout` | commonMain | デフォルトの `println("[Debuggable] ...")` 出力 |
-| `SilentLogger` | commonMain | 何も出力しない sink。プラグインを無効化せず出力だけ止めたい場合に |
-| `PrefixedLogger(prefix, delegate)` | commonMain | プレフィックスを追加して別の `DebugLogger` に委譲 |
-| `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)` に流す。デフォルトタグは `"Debuggable"` |
-
-### 5. Gradle DSL の設定
-
-Gradle プラグインは機能単位のトグルとコンパイル時デフォルトロガーを提供し、プラグイン全体を
-無効化せず特定の計測を個別に OFF / 差し替えできます。
-
-```kotlin
-debuggable {
-    enabled.set(true)          // マスタースイッチ（デフォルト: true）
-    observeFlow.set(true)      // Flow/State イニシャライザのラップ（デフォルト: true）
-    logAction.set(true)        // public メソッド呼び出しのログ（デフォルト: true）
-    defaultLogger.set("")      // モジュール全体の default として使う DebugLogger object の FQN
-                               // (空文字 = DefaultDebugLogger。その場合はランタイムで差し替え可能)
-                               // 例: defaultLogger.set("com.example.myapp.MyDebugLogger")
-}
-```
-
-`enabled = false` の場合プラグインは完全な no-op になり、IR 変換も行わず Runtime 依存も残りません。
-`observeFlow` / `logAction` を個別に無効化すると、その変換だけがスキップされ他の機能はそのまま動作します。
-
----
-
-## 🏗 内部メカニズム (Internal IR Transformation)
-
-本プラグインはコンパイル時に **Kotlin IR (Intermediate Representation)** を書き換えることで、ソースコードには現れないデバッグ用の配線を自動構築します。
-
-### 1. クリーンアップ戦略の注入
-クラスの型を判定し、実行時の監視解除ロジックを注入します。
-* **ViewModel:** `init` ブロックで `DebugCleanupRegistry` を生成し、`addCloseable` に登録するコードを生成します。
-* **AutoCloseable:** `close()` メソッドをフックし、その末尾に登録されたクリーンアップ関数をすべて実行するループを挿入します。
-* **Local Variable:** 関数全体を `try-finally` ブロックでラップするように再構成し、`finally` 内でクリーンアップを実行します。
-
-### 2. プロパティのラップ
-対象となる `State` や `Flow` の初期化式を、Runtimeライブラリが提供するデバッグ用関数でラップします。
-
-```kotlin
-// 変換前
-val uiState = mutableStateOf(UiState())
-
-// IR変換後 (概念)
-val uiState = mutableStateOf(UiState()).also { 
-    debuggableState(host = this, name = "uiState", state = it) 
-}
-```
-
-### 3. 型ベースのインテリジェント判定
-コンパイラはプロパティの完全修飾クラス名 (FQDN) をチェックし、追跡可能な型かどうかを判定します。
-* `androidx.compose.runtime.State` / `MutableState`
-* `kotlinx.coroutines.flow.Flow` / `StateFlow` / `MutableStateFlow`
-  これら以外の型に `@FocusDebuggable` 等が付与されている場合は、コンパイル時に警告を出力します。
-
-### 4. リリース時のゼロ・オーバーヘッド
-Gradleプラグイン側で `enabled.set(false)` に設定されている場合（デフォルトでは Release ビルド）、KCP は IR 変換を一切行いません。本番環境のバイナリにはデバッグ用のコードや Runtime ライブラリの依存が一切残らないため、パフォーマンスへの影響はありません。
 
 ---
 

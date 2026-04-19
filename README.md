@@ -8,7 +8,65 @@ The compiler takes care of the tedious work of instrumenting logs and preventing
 
 ## 🛠 User Guide
 
-### 1. Basic Usage
+### 1. Installation
+
+Available on Maven Central. Two things to wire up: the Gradle plugin (which applies the compiler plugin to your Kotlin compilations) and the runtime library (which the injected code calls into).
+
+Make sure `mavenCentral()` is in both your plugin and dependency repositories:
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google() // only needed for Android
+    }
+}
+```
+
+Then apply the plugin and add the runtime dependency in your module's `build.gradle.kts`:
+
+**Kotlin/JVM, Android, KMP (JVM target)**
+
+```kotlin
+plugins {
+    kotlin("jvm") // or kotlin("android"), kotlin("multiplatform")
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+}
+
+dependencies {
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+}
+```
+
+**Kotlin Multiplatform (common source set)**
+
+```kotlin
+plugins {
+    kotlin("multiplatform")
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.0"
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+        }
+    }
+}
+```
+
+The runtime ships for `jvm`, `androidTarget`, `js`, `wasmJs`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`, `linuxX64`, and `mingwX64`.
+
+On Android, logs go to Logcat with tag `"Debuggable"` by default (via `AndroidLogcatLogger`). Everywhere else, they go to stdout with a `[Debuggable]` prefix. See [§3 Replacing the Logger](#3-replacing-the-logger) to redirect.
+
+### 2. Basic Usage
 Simply annotate a class with `@Debuggable`, and the `State` and `Flow` within it will be tracked automatically.
 
 ```kotlin
@@ -23,7 +81,107 @@ class SearchViewModel : ViewModel() {
 }
 ```
 
-### 2. Memory Management and Cleanup
+### 3. Replacing the Logger
+
+By default, logs go to Android Logcat (tag `"Debuggable"`) on Android and stdout (`[Debuggable] …` prefix) everywhere else. You can route them to Timber, a file, a test collector, or anything else using any of three mechanisms (higher wins):
+
+| Priority | Mechanism | Scope |
+| :--- | :--- | :--- |
+| 1 | `@Debuggable(logger = MyLogger::class)` | The annotated class / variable |
+| 2 | Gradle DSL `debuggable { defaultLogger.set("FQN") }` | The entire module (compile-time) |
+| 3 | `DefaultDebugLogger.current = DebugLogger { ... }` | The entire process (runtime) |
+| 4 | Platform default (Logcat on Android, stdout elsewhere) | — |
+
+All logger targets must be singleton `object` declarations that implement `DebugLogger`.
+
+```kotlin
+import me.tbsten.debuggable.runtime.logging.*
+
+// (1) Per-class override
+object AuthLogger : DebugLogger {
+    override fun log(message: String) = Log.d("Auth", message)
+}
+
+@Debuggable(isSingleton = true, logger = AuthLogger::class)
+object AuthStore { /* ... */ }
+
+// (2) Module-wide (Gradle DSL) — see section 4.
+// (3) Process-wide runtime swap — set once during app startup:
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        DefaultDebugLogger.current = AndroidLogcatLogger    // built-in
+    }
+}
+```
+
+**Built-in loggers** shipped in `debuggable-runtime`:
+
+| Logger | Source set | Description |
+| :--- | :--- | :--- |
+| `DebugLogger.Stdout` | commonMain | `println("[Debuggable] ...")` sink. Default on non-Android platforms. |
+| `SilentLogger` | commonMain | No-op sink. Silences logs while keeping the plugin enabled. |
+| `PrefixedLogger(prefix, delegate)` | commonMain | Prepends a prefix and forwards to another `DebugLogger`. |
+| `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)`. Default tag is `"Debuggable"`. Default on Android. |
+
+### 4. Configuration
+
+The Gradle plugin exposes per-feature toggles and a compile-time default logger so individual aspects can be disabled or redirected without runtime setup.
+
+```kotlin
+debuggable {
+    enabled.set(true)          // master switch (default: true)
+    observeFlow.set(true)      // wrap Flow/State initializers (default: true)
+    logAction.set(true)        // log public method calls (default: true)
+    defaultLogger.set("")      // FQN of a DebugLogger object to use as the module-wide
+                               // default (empty = DefaultDebugLogger, which can still be
+                               // replaced at runtime). Example:
+                               // defaultLogger.set("com.example.myapp.MyDebugLogger")
+}
+```
+
+When `enabled = false`, the plugin is a complete no-op — no IR transformations, no runtime dependency surfaces in the output binary. When `observeFlow` or `logAction` is individually disabled, only that transformation is skipped.
+
+### 5. Internal Mechanism
+
+A high-level view of what the plugin injects into your classes at compile time. You don't need to know any of this to use `@Debuggable`, but it helps when something behaves unexpectedly.
+
+#### 5.1 Injecting Cleanup Strategies
+It determines the type of the class and injects runtime unsubscription logic.
+* **ViewModel:** Generates code in the `init` block that creates a `DebugCleanupRegistry` and registers it with `addCloseable`.
+* **AutoCloseable:** Hooks into the `close()` method and inserts a loop at the end that executes all registered cleanup functions.
+* **Local Variable:** Restructures the entire function to be wrapped in a `try-finally` block, executing cleanup inside `finally`.
+
+#### 5.2 Wrapping Properties
+Initialization expressions for target `State` or `Flow` properties are wrapped with debugging functions provided by the Runtime library.
+
+```kotlin
+// Before transformation
+val uiState = mutableStateOf(UiState())
+
+// After IR transformation (conceptual)
+val uiState = mutableStateOf(UiState()).also { 
+    debuggableState(host = this, name = "uiState", state = it) 
+}
+```
+
+#### 5.3 Type-Based Intelligent Detection
+The compiler checks the fully qualified class name (FQDN) of properties to determine whether the type is trackable.
+* `androidx.compose.runtime.State` / `MutableState`
+* `kotlinx.coroutines.flow.Flow` / `StateFlow` / `MutableStateFlow`
+
+If `@FocusDebuggable` or similar is applied to a type other than these, a warning is emitted at compile time.
+
+#### 5.4 Zero Overhead in Release Builds
+When `enabled.set(false)` is configured on the Gradle plugin side (the default for Release builds), the KCP performs no IR transformations. No debugging code or Runtime library dependencies remain in the production binary, so there is zero performance impact.
+
+---
+
+## 🔍 How It Works
+
+Behaviors the plugin automatically manages for you. Reading this section helps you predict when your logs will appear and how to filter what gets tracked.
+
+### 1. Memory Management and Cleanup
 The observation lifecycle is automatically determined based on the nature of the class.
 
 | Target | Condition | Cleanup Timing |
@@ -46,7 +204,7 @@ fun performTask() {
 class GlobalSettings { ... }
 ```
 
-### 3. Tracking Filters
+### 2. Tracking Filters
 You can focus on specific properties or exclude noise.
 
 ```kotlin
@@ -61,102 +219,6 @@ class ComplexViewModel : ViewModel() {
     val noiseState = mutableStateOf("")
 }
 ```
-
-### 4. Replacing the Logger
-
-By default, `@Debuggable` prints lines to stdout with a `[Debuggable]` prefix. You can route logs to Android Logcat, Timber, a file, or a test collector using any of three mechanisms (higher wins):
-
-| Priority | Mechanism | Scope |
-| :--- | :--- | :--- |
-| 1 | `@Debuggable(logger = MyLogger::class)` | The annotated class / variable |
-| 2 | Gradle DSL `debuggable { defaultLogger.set("FQN") }` | The entire module (compile-time) |
-| 3 | `DefaultDebugLogger.current = DebugLogger { ... }` | The entire process (runtime) |
-| 4 | `DebugLogger.Stdout` (built-in fallback) | — |
-
-All logger targets must be singleton `object` declarations that implement `DebugLogger`.
-
-```kotlin
-import me.tbsten.debuggable.runtime.logging.*
-
-// (1) Per-class override
-object AuthLogger : DebugLogger {
-    override fun log(message: String) = Log.d("Auth", message)
-}
-
-@Debuggable(isSingleton = true, logger = AuthLogger::class)
-object AuthStore { /* ... */ }
-
-// (2) Module-wide (Gradle DSL) — see section 5.
-// (3) Process-wide runtime swap — set once during app startup:
-class MyApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        DefaultDebugLogger.current = AndroidLogcatLogger    // built-in
-    }
-}
-```
-
-**Built-in loggers** shipped in `debuggable-runtime`:
-
-| Logger | Source set | Description |
-| :--- | :--- | :--- |
-| `DebugLogger.Stdout` | commonMain | The default `println("[Debuggable] ...")` sink. |
-| `SilentLogger` | commonMain | No-op sink. Silences logs while keeping the plugin enabled. |
-| `PrefixedLogger(prefix, delegate)` | commonMain | Prepends a prefix and forwards to another `DebugLogger`. |
-| `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)`. Default tag is `"Debuggable"`. |
-
-### 5. Gradle DSL Configuration
-
-The Gradle plugin exposes per-feature toggles and a compile-time default logger so individual aspects can be disabled or redirected without runtime setup.
-
-```kotlin
-debuggable {
-    enabled.set(true)          // master switch (default: true)
-    observeFlow.set(true)      // wrap Flow/State initializers (default: true)
-    logAction.set(true)        // log public method calls (default: true)
-    defaultLogger.set("")      // FQN of a DebugLogger object to use as the module-wide
-                               // default (empty = DefaultDebugLogger, which can still be
-                               // replaced at runtime). Example:
-                               // defaultLogger.set("com.example.myapp.MyDebugLogger")
-}
-```
-
-When `enabled = false`, the plugin is a complete no-op — no IR transformations, no runtime dependency surfaces in the output binary. When `observeFlow` or `logAction` is individually disabled, only that transformation is skipped.
-
----
-
-## 🏗 Internal IR Transformation
-
-This plugin rewrites the **Kotlin IR (Intermediate Representation)** at compile time to automatically build debugging infrastructure that does not appear in the source code.
-
-### 1. Injecting Cleanup Strategies
-It determines the type of the class and injects runtime unsubscription logic.
-* **ViewModel:** Generates code in the `init` block that creates a `DebugCleanupRegistry` and registers it with `addCloseable`.
-* **AutoCloseable:** Hooks into the `close()` method and inserts a loop at the end that executes all registered cleanup functions.
-* **Local Variable:** Restructures the entire function to be wrapped in a `try-finally` block, executing cleanup inside `finally`.
-
-### 2. Wrapping Properties
-Initialization expressions for target `State` or `Flow` properties are wrapped with debugging functions provided by the Runtime library.
-
-```kotlin
-// Before transformation
-val uiState = mutableStateOf(UiState())
-
-// After IR transformation (conceptual)
-val uiState = mutableStateOf(UiState()).also { 
-    debuggableState(host = this, name = "uiState", state = it) 
-}
-```
-
-### 3. Type-Based Intelligent Detection
-The compiler checks the fully qualified class name (FQDN) of properties to determine whether the type is trackable.
-* `androidx.compose.runtime.State` / `MutableState`
-* `kotlinx.coroutines.flow.Flow` / `StateFlow` / `MutableStateFlow`
-
-If `@FocusDebuggable` or similar is applied to a type other than these, a warning is emitted at compile time.
-
-### 4. Zero Overhead in Release Builds
-When `enabled.set(false)` is configured on the Gradle plugin side (the default for Release builds), the KCP performs no IR transformations. No debugging code or Runtime library dependencies remain in the production binary, so there is zero performance impact.
 
 ---
 
