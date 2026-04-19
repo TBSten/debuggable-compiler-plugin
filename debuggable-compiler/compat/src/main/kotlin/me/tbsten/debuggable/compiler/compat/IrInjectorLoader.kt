@@ -1,5 +1,6 @@
 package me.tbsten.debuggable.compiler.compat
 
+import java.util.ServiceConfigurationError
 import java.util.ServiceLoader
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
@@ -29,20 +30,40 @@ object IrInjectorLoader {
         // those and keep the ones that load cleanly.
         val rawIterator = ServiceLoader.load(IrInjector.Factory::class.java, classLoader).iterator()
         val factories = mutableListOf<IrInjector.Factory>()
+        // Skipped factories are remembered so we can surface a full picture if
+        // every factory fails to link — makes "no IrInjector.Factory found"
+        // actionable instead of cryptic.
+        val skipped = mutableListOf<Pair<String, Throwable>>()
         while (true) {
             val factory = try {
                 if (!rawIterator.hasNext()) break
                 rawIterator.next()
             } catch (t: Throwable) {
+                val className = (t as? ServiceConfigurationError)?.message?.substringAfter("Provider ")
+                    ?.substringBefore(' ') ?: t.javaClass.simpleName
+                skipped += className to t
                 if (DEBUG) System.err.println("[Debuggable compat] factory skipped: ${t.javaClass.simpleName}: ${t.message}")
                 continue
             }
             if (DEBUG) System.err.println("[Debuggable compat] factory found: ${factory.javaClass.name} (minVersion=${factory.minVersion})")
             factories += factory
         }
-        require(factories.isNotEmpty()) {
-            "No IrInjector.Factory found on classpath. Check that one of the " +
-                "`debuggable-compiler-compat-kXX` modules is on the runtime classpath."
+        if (factories.isEmpty()) {
+            // Don't swallow the skip reasons — the user will need them to fix
+            // their classpath. Format each skipped class with its failure type
+            // and message so the error is self-explanatory.
+            val skipReport = if (skipped.isEmpty()) {
+                "\nNo factories were discovered at all — META-INF/services entry missing?"
+            } else {
+                skipped.joinToString(separator = "\n  - ", prefix = "\nSkipped factories:\n  - ") { (name, t) ->
+                    "$name: ${t.javaClass.simpleName}: ${t.message ?: "<no message>"}"
+                }
+            }
+            error(
+                "No IrInjector.Factory linked successfully on the current Kotlin compiler " +
+                    "classpath. Check that one of the `debuggable-compiler-compat-kXX` modules " +
+                    "matches your Kotlin compiler version." + skipReport,
+            )
         }
 
         val rawVersion = detectKotlinVersion(classLoader)
