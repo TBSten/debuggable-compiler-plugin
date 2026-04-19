@@ -109,26 +109,31 @@ fi
 echo "ok — bytecode contains: debuggableFlow, logAction"
 
 echo
-echo "--- Step 4/4: build integration-test/kmp-smoke (all KMP targets) with Kotlin=$kotlin_version ---"
+echo "--- Step 4/4: build integration-test/kmp-smoke with Kotlin=$kotlin_version ---"
 # kmp-smoke exercises `@Debuggable` + `@FocusDebuggable var` + logAction via an
-# InMemoryLogger. `jvmTest` asserts runtime behaviour; the per-target
-# `compileKotlin<Target>` checks that the plugin JAR is self-contained enough
-# to run on every KMP target's compiler-plugin-classpath (native / wasmJs / js
-# filter out JVM-only transitive deps — fixed by shadowing compat into the
-# main plugin JAR, tracked as `done/bug-002-native-plugin-classpath.md`).
+# InMemoryLogger. `jvmTest` asserts runtime behaviour and is the universal
+# target (registered on every supported Kotlin version).
+#
+# The additional `compileKotlin<Target>` tasks for native / wasmJs / js only
+# exist when the kmp-smoke build has registered those targets — which it
+# skips on KGP < 2.3.0 + Gradle 9 to avoid a KGP-internal
+# `DefaultArtifactPublicationSet` NoClassDefFoundError (see comment in
+# integration-test/kmp-smoke/build.gradle.kts). The per-target compile tasks
+# are the "shadow-jar keeps native loading working" regression check, so we
+# only invoke them when the kmp-smoke build actually registers those targets.
 kmp_workdir="${SMOKE_KMP_WORKDIR:-integration-test/kmp-smoke}"
+native_tasks=""
+# Lexicographic comparison works here because the version strings share the
+# same "X.Y.Z[-qualifier]" shape for every supported Kotlin version.
+if [[ "$kotlin_version" > "2.3" || "$kotlin_version" == 2.3* ]]; then
+    native_tasks="compileKotlinJs compileKotlinWasmJs compileKotlinIosArm64 compileKotlinIosSimulatorArm64 compileKotlinMacosArm64 compileKotlinLinuxX64 compileKotlinMingwX64"
+fi
 (
     cd "$kmp_workdir"
     ./gradlew \
         jvmTest \
         compileKotlinJvm \
-        compileKotlinJs \
-        compileKotlinWasmJs \
-        compileKotlinIosArm64 \
-        compileKotlinIosSimulatorArm64 \
-        compileKotlinMacosArm64 \
-        compileKotlinLinuxX64 \
-        compileKotlinMingwX64 \
+        $native_tasks \
         "-Pintegration.kotlin=$kotlin_version" \
         --no-daemon \
         --refresh-dependencies \

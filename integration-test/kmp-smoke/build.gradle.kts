@@ -19,13 +19,24 @@ kotlin {
     jvm {
         compilerOptions { jvmTarget = JvmTarget.JVM_17 }
     }
-    js { nodejs() }
-    wasmJs { nodejs() }
-    iosArm64()
-    iosSimulatorArm64()
-    macosArm64()
-    linuxX64()
-    mingwX64()
+
+    // Native / wasmJs / js targets: KGP < 2.3.0 + Gradle 9 is broken —
+    // those KGP versions reference `org.gradle.api.internal.plugins.
+    // DefaultArtifactPublicationSet`, which Gradle 9 removed. Registering
+    // e.g. `iosArm64()` under Gradle 9 with KGP 2.2.x and older hits
+    // `NoClassDefFoundError` at configuration time. JVM registration stays
+    // unaffected. Restrict the non-JVM targets to KGP 2.3.0+.
+    val integrationKotlin: String = (findProperty("integration.kotlin") as String?) ?: "2.3.20"
+    val kgpSupportsNative: Boolean = integrationKotlin.compareTo("2.3.0") >= 0
+    if (kgpSupportsNative) {
+        js { nodejs() }
+        wasmJs { nodejs() }
+        iosArm64()
+        iosSimulatorArm64()
+        macosArm64()
+        linuxX64()
+        mingwX64()
+    }
 
     sourceSets {
         commonMain.dependencies {
