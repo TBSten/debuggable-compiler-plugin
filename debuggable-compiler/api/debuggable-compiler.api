@@ -1,0 +1,51 @@
+public final class me/tbsten/debuggable/compiler/DebuggableCommandLineProcessor : org/jetbrains/kotlin/compiler/plugin/CommandLineProcessor {
+	public fun <init> ()V
+	public fun appendList (Lorg/jetbrains/kotlin/config/CompilerConfiguration;Lorg/jetbrains/kotlin/config/CompilerConfigurationKey;Ljava/lang/Object;)V
+	public fun appendList (Lorg/jetbrains/kotlin/config/CompilerConfiguration;Lorg/jetbrains/kotlin/config/CompilerConfigurationKey;Ljava/util/List;)V
+	public fun applyOptionsFrom (Lorg/jetbrains/kotlin/config/CompilerConfiguration;Ljava/util/Map;Ljava/util/Collection;)V
+	public fun getPluginId ()Ljava/lang/String;
+	public fun getPluginOptions ()Ljava/util/Collection;
+	public fun processOption (Lorg/jetbrains/kotlin/compiler/plugin/AbstractCliOption;Ljava/lang/String;Lorg/jetbrains/kotlin/config/CompilerConfiguration;)V
+}
+
+public final class me/tbsten/debuggable/compiler/DebuggableCompilerPluginRegistrar : org/jetbrains/kotlin/compiler/plugin/CompilerPluginRegistrar {
+	public fun <init> ()V
+	public fun getPluginId ()Ljava/lang/String;
+	public fun getSupportsK2 ()Z
+	public fun registerExtensions (Lorg/jetbrains/kotlin/compiler/plugin/CompilerPluginRegistrar$ExtensionStorage;Lorg/jetbrains/kotlin/config/CompilerConfiguration;)V
+}
+
+public final class me/tbsten/debuggable/compiler/DebuggableIrGenerationExtension : org/jetbrains/kotlin/backend/common/extensions/IrGenerationExtension {
+	public fun <init> ()V
+	public fun <init> (Lme/tbsten/debuggable/compiler/DebuggableOptions;)V
+	public synthetic fun <init> (Lme/tbsten/debuggable/compiler/DebuggableOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun generate (Lorg/jetbrains/kotlin/ir/declarations/IrModuleFragment;Lorg/jetbrains/kotlin/backend/common/extensions/IrPluginContext;)V
+	public fun getPlatformIntrinsicExtension (Lorg/jetbrains/kotlin/backend/common/LoweringContext;)Lorg/jetbrains/kotlin/backend/common/extensions/IrIntrinsicExtension;
+	public fun getShouldAlsoBeAppliedInKaptStubGenerationMode ()Z
+}
+
+public final class me/tbsten/debuggable/compiler/DebuggableOptions {
+	public fun <init> (ZZLjava/lang/String;)V
+	public synthetic fun <init> (ZZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (ZZLjava/lang/String;)Lme/tbsten/debuggable/compiler/DebuggableOptions;
+	public static synthetic fun copy$default (Lme/tbsten/debuggable/compiler/DebuggableOptions;ZZLjava/lang/String;ILjava/lang/Object;)Lme/tbsten/debuggable/compiler/DebuggableOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefaultLoggerFqn ()Ljava/lang/String;
+	public final fun getLogAction ()Z
+	public final fun getObserveFlow ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class me/tbsten/debuggable/compiler/fir/DebuggableFirAdditionalCheckersExtension : org/jetbrains/kotlin/fir/analysis/extensions/FirAdditionalCheckersExtension {
+	public fun <init> (Lorg/jetbrains/kotlin/fir/FirSession;)V
+	public fun getDeclarationCheckers ()Lorg/jetbrains/kotlin/fir/analysis/checkers/declaration/DeclarationCheckers;
+}
+
+public final class me/tbsten/debuggable/compiler/fir/DebuggableFirExtensionRegistrar : org/jetbrains/kotlin/fir/extensions/FirExtensionRegistrar {
+	public fun <init> ()V
+}
+

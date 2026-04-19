@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import me.tbsten.debuggable.runtime.annotations.InternalDebuggableApi
 import me.tbsten.debuggable.runtime.logging.DebugLogger
 import me.tbsten.debuggable.runtime.logging.DefaultDebugLogger
 import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
@@ -17,6 +18,7 @@ import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
  *
  * Called automatically by the Debuggable compiler plugin; not intended for direct use.
  */
+@InternalDebuggableApi
 fun <T> State<T>.debuggableState(
     name: String,
     registry: DebugCleanupRegistry = DebugCleanupRegistry.Default,

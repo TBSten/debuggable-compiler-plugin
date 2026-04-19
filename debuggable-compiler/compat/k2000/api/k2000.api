@@ -1,0 +1,11 @@
+public final class me/tbsten/debuggable/compiler/compat/k2000/DebuggableIrInjectorK2000 : me/tbsten/debuggable/compiler/compat/IrInjector {
+	public fun <init> ()V
+	public fun transform (Lorg/jetbrains/kotlin/ir/declarations/IrModuleFragment;Lorg/jetbrains/kotlin/backend/common/extensions/IrPluginContext;Lme/tbsten/debuggable/compiler/compat/IrInjector$Options;)V
+}
+
+public final class me/tbsten/debuggable/compiler/compat/k2000/DebuggableIrInjectorK2000$Factory : me/tbsten/debuggable/compiler/compat/IrInjector$Factory {
+	public fun <init> ()V
+	public fun create ()Lme/tbsten/debuggable/compiler/compat/IrInjector;
+	public fun getMinVersion ()Ljava/lang/String;
+}
+

@@ -1,0 +1,84 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, js, linuxX64, macosArm64, mingwX64, wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <me.tbsten.debuggablecompilerplugin:debuggable-runtime>
+open annotation class me.tbsten.debuggable.runtime.annotations/Debuggable : kotlin/Annotation { // me.tbsten.debuggable.runtime.annotations/Debuggable|null[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin.reflect/KClass<out me.tbsten.debuggable.runtime.logging/DebugLogger> = ...) // me.tbsten.debuggable.runtime.annotations/Debuggable.<init>|<init>(kotlin.Boolean;kotlin.reflect.KClass<out|me.tbsten.debuggable.runtime.logging.DebugLogger>){}[0]
+
+    final val isSingleton // me.tbsten.debuggable.runtime.annotations/Debuggable.isSingleton|{}isSingleton[0]
+        final fun <get-isSingleton>(): kotlin/Boolean // me.tbsten.debuggable.runtime.annotations/Debuggable.isSingleton.<get-isSingleton>|<get-isSingleton>(){}[0]
+    final val logger // me.tbsten.debuggable.runtime.annotations/Debuggable.logger|{}logger[0]
+        final fun <get-logger>(): kotlin.reflect/KClass<out me.tbsten.debuggable.runtime.logging/DebugLogger> // me.tbsten.debuggable.runtime.annotations/Debuggable.logger.<get-logger>|<get-logger>(){}[0]
+}
+
+open annotation class me.tbsten.debuggable.runtime.annotations/FocusDebuggable : kotlin/Annotation { // me.tbsten.debuggable.runtime.annotations/FocusDebuggable|null[0]
+    constructor <init>() // me.tbsten.debuggable.runtime.annotations/FocusDebuggable.<init>|<init>(){}[0]
+}
+
+open annotation class me.tbsten.debuggable.runtime.annotations/IgnoreDebuggable : kotlin/Annotation { // me.tbsten.debuggable.runtime.annotations/IgnoreDebuggable|null[0]
+    constructor <init>() // me.tbsten.debuggable.runtime.annotations/IgnoreDebuggable.<init>|<init>(){}[0]
+}
+
+open annotation class me.tbsten.debuggable.runtime.annotations/InternalDebuggableApi : kotlin/Annotation { // me.tbsten.debuggable.runtime.annotations/InternalDebuggableApi|null[0]
+    constructor <init>() // me.tbsten.debuggable.runtime.annotations/InternalDebuggableApi.<init>|<init>(){}[0]
+}
+
+abstract fun interface me.tbsten.debuggable.runtime.logging/DebugLogger { // me.tbsten.debuggable.runtime.logging/DebugLogger|null[0]
+    abstract fun log(kotlin/String) // me.tbsten.debuggable.runtime.logging/DebugLogger.log|log(kotlin.String){}[0]
+
+    final object Companion { // me.tbsten.debuggable.runtime.logging/DebugLogger.Companion|null[0]
+        final val Stdout // me.tbsten.debuggable.runtime.logging/DebugLogger.Companion.Stdout|{}Stdout[0]
+            final fun <get-Stdout>(): me.tbsten.debuggable.runtime.logging/DebugLogger // me.tbsten.debuggable.runtime.logging/DebugLogger.Companion.Stdout.<get-Stdout>|<get-Stdout>(){}[0]
+    }
+}
+
+abstract interface me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry : kotlin/AutoCloseable { // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry|null[0]
+    abstract val coroutineScope // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.coroutineScope|{}coroutineScope[0]
+        abstract fun <get-coroutineScope>(): kotlinx.coroutines/CoroutineScope // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.coroutineScope.<get-coroutineScope>|<get-coroutineScope>(){}[0]
+
+    abstract fun register(kotlin/Function0<kotlin/Unit>) // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.register|register(kotlin.Function0<kotlin.Unit>){}[0]
+
+    final object Default : me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry { // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.Default|null[0]
+        final val coroutineScope // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.Default.coroutineScope|{}coroutineScope[0]
+            final fun <get-coroutineScope>(): kotlinx.coroutines/CoroutineScope // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.Default.coroutineScope.<get-coroutineScope>|<get-coroutineScope>(){}[0]
+
+        final fun close() // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.Default.close|close(){}[0]
+        final fun register(kotlin/Function0<kotlin/Unit>) // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry.Default.register|register(kotlin.Function0<kotlin.Unit>){}[0]
+    }
+}
+
+final class me.tbsten.debuggable.runtime.logging/PrefixedLogger : me.tbsten.debuggable.runtime.logging/DebugLogger { // me.tbsten.debuggable.runtime.logging/PrefixedLogger|null[0]
+    constructor <init>(kotlin/String, me.tbsten.debuggable.runtime.logging/DebugLogger = ...) // me.tbsten.debuggable.runtime.logging/PrefixedLogger.<init>|<init>(kotlin.String;me.tbsten.debuggable.runtime.logging.DebugLogger){}[0]
+
+    final fun log(kotlin/String) // me.tbsten.debuggable.runtime.logging/PrefixedLogger.log|log(kotlin.String){}[0]
+}
+
+final object me.tbsten.debuggable.runtime.logging/DefaultDebugLogger : me.tbsten.debuggable.runtime.logging/DebugLogger { // me.tbsten.debuggable.runtime.logging/DefaultDebugLogger|null[0]
+    final var current // me.tbsten.debuggable.runtime.logging/DefaultDebugLogger.current|{}current[0]
+        final fun <get-current>(): me.tbsten.debuggable.runtime.logging/DebugLogger // me.tbsten.debuggable.runtime.logging/DefaultDebugLogger.current.<get-current>|<get-current>(){}[0]
+        final fun <set-current>(me.tbsten.debuggable.runtime.logging/DebugLogger) // me.tbsten.debuggable.runtime.logging/DefaultDebugLogger.current.<set-current>|<set-current>(me.tbsten.debuggable.runtime.logging.DebugLogger){}[0]
+
+    final fun log(kotlin/String) // me.tbsten.debuggable.runtime.logging/DefaultDebugLogger.log|log(kotlin.String){}[0]
+}
+
+final object me.tbsten.debuggable.runtime.logging/SilentLogger : me.tbsten.debuggable.runtime.logging/DebugLogger { // me.tbsten.debuggable.runtime.logging/SilentLogger|null[0]
+    final fun log(kotlin/String) // me.tbsten.debuggable.runtime.logging/SilentLogger.log|log(kotlin.String){}[0]
+}
+
+final val me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_DefaultDebugLogger$stableprop // me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_DefaultDebugLogger$stableprop|#static{}me_tbsten_debuggable_runtime_logging_DefaultDebugLogger$stableprop[0]
+final val me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_PrefixedLogger$stableprop // me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_PrefixedLogger$stableprop|#static{}me_tbsten_debuggable_runtime_logging_PrefixedLogger$stableprop[0]
+final val me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_SilentLogger$stableprop // me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_SilentLogger$stableprop|#static{}me_tbsten_debuggable_runtime_logging_SilentLogger$stableprop[0]
+final val me.tbsten.debuggable.runtime.registry/me_tbsten_debuggable_runtime_registry_DebugCleanupRegistry_Default$stableprop // me.tbsten.debuggable.runtime.registry/me_tbsten_debuggable_runtime_registry_DebugCleanupRegistry_Default$stableprop|#static{}me_tbsten_debuggable_runtime_registry_DebugCleanupRegistry_Default$stableprop[0]
+
+final fun <#A: kotlin/Any?> (androidx.compose.runtime/State<#A>).me.tbsten.debuggable.runtime.extensions/debuggableState(kotlin/String, me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry = ..., me.tbsten.debuggable.runtime.logging/DebugLogger = ...): androidx.compose.runtime/State<#A> // me.tbsten.debuggable.runtime.extensions/debuggableState|debuggableState@androidx.compose.runtime.State<0:0>(kotlin.String;me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry;me.tbsten.debuggable.runtime.logging.DebugLogger){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (kotlinx.coroutines.flow/Flow<#A>).me.tbsten.debuggable.runtime.extensions/debuggableFlow(kotlin/String, me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry = ..., me.tbsten.debuggable.runtime.logging/DebugLogger = ...): kotlinx.coroutines.flow/Flow<#A> // me.tbsten.debuggable.runtime.extensions/debuggableFlow|debuggableFlow@kotlinx.coroutines.flow.Flow<0:0>(kotlin.String;me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry;me.tbsten.debuggable.runtime.logging.DebugLogger){0§<kotlin.Any?>}[0]
+final fun me.tbsten.debuggable.runtime.logging/logAction(kotlin/String, kotlin/Array<out kotlin/Any?>..., me.tbsten.debuggable.runtime.logging/DebugLogger = ...) // me.tbsten.debuggable.runtime.logging/logAction|logAction(kotlin.String;kotlin.Array<out|kotlin.Any?>...;me.tbsten.debuggable.runtime.logging.DebugLogger){}[0]
+final fun me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_DefaultDebugLogger$stableprop_getter(): kotlin/Int // me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_DefaultDebugLogger$stableprop_getter|me_tbsten_debuggable_runtime_logging_DefaultDebugLogger$stableprop_getter(){}[0]
+final fun me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_PrefixedLogger$stableprop_getter(): kotlin/Int // me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_PrefixedLogger$stableprop_getter|me_tbsten_debuggable_runtime_logging_PrefixedLogger$stableprop_getter(){}[0]
+final fun me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_SilentLogger$stableprop_getter(): kotlin/Int // me.tbsten.debuggable.runtime.logging/me_tbsten_debuggable_runtime_logging_SilentLogger$stableprop_getter|me_tbsten_debuggable_runtime_logging_SilentLogger$stableprop_getter(){}[0]
+final fun me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry(): me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry // me.tbsten.debuggable.runtime.registry/DebugCleanupRegistry|DebugCleanupRegistry(){}[0]
+final fun me.tbsten.debuggable.runtime.registry/me_tbsten_debuggable_runtime_registry_DebugCleanupRegistry_Default$stableprop_getter(): kotlin/Int // me.tbsten.debuggable.runtime.registry/me_tbsten_debuggable_runtime_registry_DebugCleanupRegistry_Default$stableprop_getter|me_tbsten_debuggable_runtime_registry_DebugCleanupRegistry_Default$stableprop_getter(){}[0]

@@ -1,3 +1,5 @@
+@file:OptIn(me.tbsten.debuggable.runtime.annotations.InternalDebuggableApi::class)
+
 package me.tbsten.debuggable.runtime.extensions
 
 import androidx.compose.runtime.mutableStateOf
