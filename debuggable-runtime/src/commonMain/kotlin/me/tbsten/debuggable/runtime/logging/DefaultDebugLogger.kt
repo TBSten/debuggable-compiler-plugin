@@ -25,8 +25,12 @@ import kotlin.concurrent.Volatile
  * scope for this minimal implementation.
  */
 object DefaultDebugLogger : DebugLogger {
+    // Start from the platform-appropriate default: Logcat on Android so
+    // Android consumers don't need any setup to see logs, plain stdout
+    // (`println` → `console.log` on JS/Wasm) everywhere else. Override by
+    // assigning [current] at startup if you want a different sink.
     @Volatile
-    private var _current: DebugLogger = DebugLogger.Stdout
+    private var _current: DebugLogger = platformDefaultLogger()
 
     var current: DebugLogger
         get() = _current
