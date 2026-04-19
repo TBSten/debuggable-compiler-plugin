@@ -76,4 +76,13 @@ internal class SymbolProvider(private val pluginContext: IrPluginContext) {
             )
         ).single()
     }
+
+    val debuggableSetFunction: IrSimpleFunctionSymbol by lazy {
+        pluginContext.referenceFunctions(
+            CallableId(
+                FqName("me.tbsten.debuggable.runtime.extensions"),
+                Name.identifier("debuggableSet"),
+            )
+        ).single()
+    }
 }

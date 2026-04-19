@@ -81,6 +81,18 @@ class SearchViewModel : ViewModel() {
 }
 ```
 
+`Flow` / `State` 以外の普通の `var` property も追跡できます。`@FocusDebuggable` を付けると setter が書き換わり、代入のたびにログが出ます:
+
+```kotlin
+@Debuggable(isSingleton = true)
+object UserForm {
+    @FocusDebuggable var name: String = ""
+    @FocusDebuggable var age: Int = 0
+}
+// UserForm.name = "daisy"   → "[Debuggable] name: daisy"
+// UserForm.age  = 30        → "[Debuggable] age: 30"
+```
+
 ### 3. ロガーの差し替え
 
 デフォルトでは Android は Logcat (タグ `"Debuggable"`)、それ以外は stdout に `[Debuggable]` プレフィックス付きで出力されます。Timber、ファイル出力、テスト収集、Logcat 以外のタグなど任意の出力先に切り替えられます。

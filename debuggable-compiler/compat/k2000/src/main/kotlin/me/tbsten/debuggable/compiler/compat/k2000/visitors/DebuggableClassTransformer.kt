@@ -131,10 +131,11 @@ internal class DebuggableClassTransformer(
         if (focusMode) {
             properties.filter { it.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE) }.forEach { prop ->
                 val type = prop.getter?.returnType
-                if (type != null && !type.isDebuggableTarget()) {
+                if (type != null && !type.isDebuggableTarget() && !prop.isVar) {
                     messageCollector.report(
                         CompilerMessageSeverity.WARNING,
-                        "@FocusDebuggable on '${prop.name}' has no effect: property is not a Flow or State type",
+                        "@FocusDebuggable on '${prop.name}' has no effect: property is neither a Flow/State " +
+                            "nor a `var` with a backing field.",
                     )
                 }
             }
@@ -145,6 +146,15 @@ internal class DebuggableClassTransformer(
             if (!type.isDebuggableTarget()) return@filter false
             if (focusMode) property.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
             else !property.hasAnnotation(AnnotationFqNames.IGNORE_DEBUGGABLE)
+        }
+
+        val setterOverrideProperties = properties.filter { property ->
+            if (!property.isVar) return@filter false
+            if (property.backingField == null) return@filter false
+            if (property.setter?.isFakeOverride != false) return@filter false
+            val type = property.getter?.returnType ?: return@filter false
+            if (type.isDebuggableTarget()) return@filter false
+            property.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
         }
 
         val targetFunctions = functions.filter { fn ->
@@ -186,6 +196,16 @@ internal class DebuggableClassTransformer(
                 loggerResolver = loggerResolver,
                 pluginContext = pluginContext,
             )
+
+            if (setterOverrideProperties.isNotEmpty()) {
+                injectSetterOverrides(
+                    irClass = irClass,
+                    targetVarProperties = setterOverrideProperties,
+                    loggerResolver = loggerResolver,
+                    symbolProvider = symbolProvider,
+                    pluginContext = pluginContext,
+                )
+            }
         }
     }
 

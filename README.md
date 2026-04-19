@@ -81,6 +81,18 @@ class SearchViewModel : ViewModel() {
 }
 ```
 
+Plain `var` properties that are **not** `Flow` / `State` can be tracked too — opt in with `@FocusDebuggable` and the plugin rewrites the setter to log every assignment:
+
+```kotlin
+@Debuggable(isSingleton = true)
+object UserForm {
+    @FocusDebuggable var name: String = ""
+    @FocusDebuggable var age: Int = 0
+}
+// UserForm.name = "daisy"   → "[Debuggable] name: daisy"
+// UserForm.age  = 30        → "[Debuggable] age: 30"
+```
+
 ### 3. Replacing the Logger
 
 By default, logs go to Android Logcat (tag `"Debuggable"`) on Android and stdout (`[Debuggable] …` prefix) everywhere else. You can route them to Timber, a file, a test collector, or anything else using any of three mechanisms (higher wins):
