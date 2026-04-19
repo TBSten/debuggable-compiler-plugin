@@ -37,11 +37,11 @@ dependencyResolutionManagement {
 ```kotlin
 plugins {
     kotlin("jvm") // もしくは kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
         }
     }
 }
@@ -123,6 +123,9 @@ class MyApp : Application() {
 | `DebugLogger.Stdout` | commonMain | `println("[Debuggable] ...")` 出力。Android 以外のデフォルト |
 | `SilentLogger` | commonMain | 何も出力しない sink。プラグインを無効化せず出力だけ止めたい場合に |
 | `PrefixedLogger(prefix, delegate)` | commonMain | プレフィックスを追加して別の `DebugLogger` に委譲 |
+| `InMemoryLogger()` | commonMain | メッセージを list に記録。単体テストで `logger.messages` を assert する用途 |
+| `CompositeLogger(vararg loggers)` | commonMain | 複数の sink にメッセージを fan-out (例: stdout + InMemory を同時に) |
+| `FileLogger(file, append)` | jvm + androidMain | `java.io.File` に 1 行ずつ append。thread-safe、親ディレクトリ自動作成、write 毎に flush |
 | `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)` に流す。デフォルトタグは `"Debuggable"`。Android のデフォルト |
 
 ### 4. Configuration
@@ -275,7 +278,7 @@ class ComplexViewModel : ViewModel() {
 ./gradlew publishToMavenLocal
 ```
 
-これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.2`) が `~/.m2/` にインストールされます。
+これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.3`) が `~/.m2/` にインストールされます。
 
 ### 2. サンプルを選ぶ
 

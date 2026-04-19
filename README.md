@@ -37,11 +37,11 @@ Then apply the plugin and add the runtime dependency in your module's `build.gra
 ```kotlin
 plugins {
     kotlin("jvm") // or kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
 }
 ```
 
@@ -50,13 +50,13 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.2"
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.3"
 }
 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.2")
+            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.3")
         }
     }
 }
@@ -122,6 +122,9 @@ class MyApp : Application() {
 | `DebugLogger.Stdout` | commonMain | `println("[Debuggable] ...")` sink. Default on non-Android platforms. |
 | `SilentLogger` | commonMain | No-op sink. Silences logs while keeping the plugin enabled. |
 | `PrefixedLogger(prefix, delegate)` | commonMain | Prepends a prefix and forwards to another `DebugLogger`. |
+| `InMemoryLogger()` | commonMain | Records every message into a list. Designed for unit tests — assert against `logger.messages`. |
+| `CompositeLogger(vararg loggers)` | commonMain | Fans out every message to multiple sinks (e.g. keep stdout while also capturing in memory). |
+| `FileLogger(file, append)` | jvm + androidMain | Appends each message as a line to a `java.io.File`. Thread-safe; creates parent dirs; flushes per write. |
 | `AndroidLogcatLogger` / `AndroidLogcatLogger(tag)` | androidMain | `Log.d(tag, message)`. Default tag is `"Debuggable"`. Default on Android. |
 
 ### 4. Configuration
@@ -275,7 +278,7 @@ From the repo root:
 ./gradlew publishToMavenLocal
 ```
 
-This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.2`) into `~/.m2/`.
+This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.3`) into `~/.m2/`.
 
 ### 2. Pick a sample
 

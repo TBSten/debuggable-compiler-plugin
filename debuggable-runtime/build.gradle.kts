@@ -38,6 +38,13 @@ kotlin {
     linuxX64()
     mingwX64()
 
+    // Keep the default `nativeMain`/`appleMain` hierarchy wiring intact when
+    // we add the custom `jvmAndAndroidMain` shared source set below. Without
+    // this call, declaring *any* custom source set disables the default
+    // template and native targets lose the shared `nativeMain` actuals (e.g.
+    // `platformDefaultLogger`).
+    applyDefaultHierarchyTemplate()
+
     sourceSets {
         commonMain.dependencies {
             // stdlib is compileOnly so it is NOT listed in the published Gradle
@@ -81,6 +88,14 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.kotlinx.coroutines.swing)
         }
+
+        // Shared Java-IO source set for APIs that rely on `java.io.File`
+        // (currently `FileLogger`). Both JVM and Android variants get it.
+        val jvmAndAndroidMain by creating {
+            dependsOn(commonMain.get())
+        }
+        jvmMain.get().dependsOn(jvmAndAndroidMain)
+        androidMain.get().dependsOn(jvmAndAndroidMain)
 
     }
 }

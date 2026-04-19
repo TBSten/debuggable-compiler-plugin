@@ -59,4 +59,69 @@ class StandardLoggersTest {
             DefaultDebugLogger.current = original
         }
     }
+
+    @Test
+    fun `InMemoryLogger captures messages in order`() {
+        val logger = InMemoryLogger()
+        logger.log("first")
+        logger.log("second")
+        logger.log("third")
+        assertEquals(listOf("first", "second", "third"), logger.messages)
+    }
+
+    @Test
+    fun `InMemoryLogger snapshot is independent of future writes`() {
+        val logger = InMemoryLogger()
+        logger.log("a")
+        val snap = logger.snapshot()
+        logger.log("b")
+        assertEquals(listOf("a"), snap)
+        assertEquals(listOf("a", "b"), logger.messages)
+    }
+
+    @Test
+    fun `InMemoryLogger clear resets state`() {
+        val logger = InMemoryLogger()
+        logger.log("x")
+        logger.log("y")
+        logger.clear()
+        assertTrue(logger.messages.isEmpty())
+        logger.log("z")
+        assertEquals(listOf("z"), logger.messages)
+    }
+
+    @Test
+    fun `CompositeLogger forwards to every delegate in order`() {
+        val a = InMemoryLogger()
+        val b = InMemoryLogger()
+        val composite = CompositeLogger(a, b)
+
+        composite.log("hello")
+        composite.log("world")
+
+        assertEquals(listOf("hello", "world"), a.messages)
+        assertEquals(listOf("hello", "world"), b.messages)
+    }
+
+    @Test
+    fun `CompositeLogger with empty list is a no-op`() {
+        val logger = CompositeLogger(emptyList())
+        logger.log("anything")
+        // should not throw
+        assertTrue(true)
+    }
+
+    @Test
+    fun `CompositeLogger visits remaining delegates when one throws`() {
+        val captured = InMemoryLogger()
+        val composite = CompositeLogger(
+            DebugLogger { error("boom") },
+            captured,
+        )
+
+        val thrown = runCatching { composite.log("x") }.exceptionOrNull()
+        assertTrue(thrown != null, "expected rethrown exception")
+        // Delegates after the throwing one still received the message.
+        assertEquals(listOf("x"), captured.messages)
+    }
 }
