@@ -40,7 +40,12 @@ buildConfig {
 
 dependencies {
     api(project(":debuggable-compiler:compat"))
-    implementation(libs.kotlin.stdlib)
+    // `compileOnly` (not `implementation`) — stdlib is always on kotlinc's
+    // compiler-plugin classloader at load time. Declaring it as `implementation`
+    // leaks `kotlin-stdlib:<pinned>` into this module's POM / `.module`, which
+    // Gradle propagates into consumer compile classpaths via KGP and breaks
+    // Kotlin 2.0.x / 2.1.x consumers ("metadata version 2.3.0, expected 2.0.0").
+    compileOnly(libs.kotlin.stdlib)
     // Pinned to 2.2.0 (this impl's minVersion) so the resulting bytecode only references
     // symbols that already existed in 2.2.0 — e.g. the pre-2.3.20 `IrDeclarationOrigin`
     // companion layout (see KT commit `3494003c1d`, which renamed the companion accessor

@@ -37,7 +37,9 @@ buildConfig {
 
 dependencies {
     api(project(":debuggable-compiler:compat"))
-    implementation(libs.kotlin.stdlib)
+    // See sibling compat modules — `compileOnly` keeps stdlib out of published
+    // POM / `.module` so it doesn't leak into consumer classpaths.
+    compileOnly(libs.kotlin.stdlib)
     // Compiled against Kotlin 2.1.21's compiler API so bytecode only references symbols
     // that existed in 2.1.x. ServiceLoader picks this impl when the running compiler is
     // 2.1.20 — 2.1.21 (where `pluginContext.messageCollector` exists but `irCall` is still

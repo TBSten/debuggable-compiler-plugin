@@ -38,7 +38,9 @@ mavenPublishing {
 
 dependencies {
     api(project(":debuggable-compiler:compat"))
-    implementation(libs.kotlin.stdlib)
+    // See sibling compat modules — `compileOnly` keeps stdlib out of published
+    // POM / `.module` so it doesn't leak into consumer classpaths.
+    compileOnly(libs.kotlin.stdlib)
     // Compiled against Kotlin 2.0.21's compiler API so bytecode only references symbols
     // that existed in Kotlin 2.0.x. ServiceLoader picks this impl when the running
     // compiler is 2.0.0 – 2.1.10 (before `pluginContext.messageCollector` was introduced

@@ -32,21 +32,6 @@ kotlin {
     }
 }
 
-// Workaround for the known `debuggable-runtime-android` `.module` stdlib leak
-// (tracked in `.local/tickets/bug-001-android-stdlib-leak.md`). Without this,
-// Gradle upgrades `kotlin-stdlib` to the plugin's pinned version (currently
-// 2.3.20) and consumer kotlinc 2.0.x / 2.1.x fails with "metadata version
-// 2.3.0, expected 2.0.0". Pinning to the consumer's own Kotlin version keeps
-// the metadata readable.
-val consumerKotlin: String = (findProperty("integration.kotlin") as String?) ?: "2.3.20"
-configurations.all {
-    resolutionStrategy.eachDependency {
-        if (requested.group == "org.jetbrains.kotlin" && requested.name == "kotlin-stdlib") {
-            useVersion(consumerKotlin)
-        }
-    }
-}
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

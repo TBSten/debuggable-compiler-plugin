@@ -45,9 +45,17 @@ buildConfig {
 }
 
 dependencies {
-    // stdlib is declared explicitly because `kotlin.stdlib.default.dependency=false`
-    // is set project-wide (see gradle.properties for the reason).
-    implementation(libs.kotlin.stdlib)
+    // `compileOnly` (not `implementation`) because Gradle always supplies stdlib
+    // on its own buildscript classpath — we only need it to compile against.
+    // Declaring it as `implementation` would leak `kotlin-stdlib:<pinned>` into
+    // this plugin's POM with `runtime` scope, which Gradle then pins as a
+    // `strictly` constraint on consumer buildscripts and propagates into the
+    // user's compileClasspath via KGP, breaking Kotlin 2.0.x / 2.1.x consumers
+    // with "metadata version 2.3.0, expected 2.0.0".
+    // Note: `kotlin.stdlib.default.dependency=false` (gradle.properties)
+    // already suppresses KGP's automatic stdlib addition, so this explicit
+    // `compileOnly` is what gives us compile-time access.
+    compileOnly(libs.kotlin.stdlib)
     compileOnly(libs.kotlin.gradle.plugin.api)
 }
 

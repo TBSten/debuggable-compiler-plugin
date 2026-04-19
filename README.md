@@ -328,22 +328,6 @@ matching `kctfork`):
 | 2.0.10      | ✅ Verified |
 | 2.0.0       | ✅ Verified |
 
-> **Known issue — Android + Kotlin 2.0.x / 2.1.x consumers (as of 0.1.2):**
-> The published Android variant's `.module` leaks a `kotlin-stdlib:<pinned>`
-> dependency, which Gradle force-upgrades on older Kotlin consumers and breaks
-> the compile with `"metadata version 2.3.0, expected 2.0.0"`. Workaround until
-> the `.module` leak is patched — add to the consumer `build.gradle.kts`:
->
-> ```kotlin
-> configurations.all {
->     resolutionStrategy.eachDependency {
->         if (requested.group == "org.jetbrains.kotlin" && requested.name == "kotlin-stdlib") {
->             useVersion("<your Kotlin version, e.g. 2.0.21>")
->         }
->     }
-> }
-> ```
-
 ### How multi-version works internally
 
 The IR transformation logic lives in a metro-style per-Kotlin-version compat layer so a
