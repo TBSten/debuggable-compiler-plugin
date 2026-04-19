@@ -97,16 +97,21 @@ abstract class CompilerTestBase {
             .map(::File)
         return jvmClasspath.filter { entry ->
             val name = entry.name
-            // Drop every compat jar — their metadata level can exceed the test compiler's.
-            // Drop the main plugin jar and its own build output — user code doesn't need the
-            // plugin's bytecode on its classpath; the plugin is wired in via `compilerPluginRegistrars`.
-            !name.startsWith("debuggable-compiler-compat") &&
-                !name.startsWith("debuggable-compiler-0") &&
-                entry.absolutePath.let { path ->
-                    "/debuggable-compiler/build/" !in path &&
-                        "/debuggable-compiler-compat" !in path &&
-                        "/build/classes/kotlin/test" !in path
-                }
+            val path = entry.absolutePath
+            when {
+                // Compat jars: filename is `debuggable-compiler-compat-kXX-*.jar` regardless
+                // of the underlying Gradle project path (`:debuggable-compiler:compat:kXX`).
+                name.startsWith("debuggable-compiler-compat") -> false
+                // Main plugin jar.
+                name.startsWith("debuggable-compiler-0") -> false
+                // Any local build output under `debuggable-compiler/` — covers both the
+                // main plugin's `build/classes/kotlin/main` and every nested compat
+                // module's `build/classes/kotlin/main` after the restructure.
+                "/debuggable-compiler/" in path && "/build/" in path -> false
+                // Our own test classes.
+                "/build/classes/kotlin/test" in path -> false
+                else -> true
+            }
         }
     }
 

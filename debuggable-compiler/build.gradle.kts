@@ -72,11 +72,11 @@ dependencies {
     // Abstract IR injection API + ServiceLoader discovery. Per-version
     // implementations (`debuggable-compiler-compat-kXX`) are brought in as
     // `runtimeOnly` so their bytecode stays out of compile-time resolution.
-    implementation(project(":debuggable-compiler-compat"))
-    runtimeOnly(project(":debuggable-compiler-compat-k23"))
-    runtimeOnly(project(":debuggable-compiler-compat-k21"))
-    runtimeOnly(project(":debuggable-compiler-compat-k2020"))
-    runtimeOnly(project(":debuggable-compiler-compat-k2000"))
+    implementation(project(":debuggable-compiler:compat"))
+    runtimeOnly(project(":debuggable-compiler:compat:k23"))
+    runtimeOnly(project(":debuggable-compiler:compat:k21"))
+    runtimeOnly(project(":debuggable-compiler:compat:k2020"))
+    runtimeOnly(project(":debuggable-compiler:compat:k2000"))
 
     // Version-matched test toolchain — see `testKotlinVersion` / `kctforkForKotlin`
     // at the top of this file.

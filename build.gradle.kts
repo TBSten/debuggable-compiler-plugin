@@ -25,7 +25,12 @@ subprojects {
     plugins.withId("com.vanniktech.maven.publish") {
         extensions.configure<MavenPublishBaseExtension> {
             publishToMavenCentral()
-            coordinates(debuggableGroup, project.name, debuggableVersion)
+            // Artifact ID derives from the full Gradle project path with ":" joined by
+            // "-". This keeps Maven coordinates flat (`debuggable-compiler-compat-k23`)
+            // even though the project tree is nested (`:debuggable-compiler:compat:k23`),
+            // so consumers on 0.1.0 see no change after the module restructure.
+            val artifactId = project.path.removePrefix(":").replace(":", "-")
+            coordinates(debuggableGroup, artifactId, debuggableVersion)
             pom {
                 url = projectUrl
                 inceptionYear = "2026"

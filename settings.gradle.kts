@@ -33,10 +33,14 @@ dependencyResolutionManagement {
 }
 include(":debuggable-runtime")
 include(":debuggable-compiler")
-include(":debuggable-compiler-compat")
-include(":debuggable-compiler-compat-k23")
-include(":debuggable-compiler-compat-k21")
-include(":debuggable-compiler-compat-k2020")
-include(":debuggable-compiler-compat-k2000")
+// Per-Kotlin-version IR impl modules, nested under `:debuggable-compiler` to
+// reflect their "part of the compiler plugin" status. Maven artifact IDs still
+// derive from `project.path` dash-joined (see root build.gradle.kts), so
+// consumers continue to see `debuggable-compiler-compat-kXX` coordinates.
+include(":debuggable-compiler:compat")
+include(":debuggable-compiler:compat:k23")
+include(":debuggable-compiler:compat:k21")
+include(":debuggable-compiler:compat:k2020")
+include(":debuggable-compiler:compat:k2000")
 include(":debuggable-gradle")
 

@@ -32,7 +32,7 @@ buildConfig {
 }
 
 dependencies {
-    api(project(":debuggable-compiler-compat"))
+    api(project(":debuggable-compiler:compat"))
     implementation(libs.kotlin.stdlib)
     // Pinned to 2.2.0 (this impl's minVersion) so the resulting bytecode only references
     // symbols that already existed in 2.2.0 — e.g. the pre-2.3.20 `IrDeclarationOrigin`

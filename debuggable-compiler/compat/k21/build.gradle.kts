@@ -29,7 +29,7 @@ buildConfig {
 }
 
 dependencies {
-    api(project(":debuggable-compiler-compat"))
+    api(project(":debuggable-compiler:compat"))
     implementation(libs.kotlin.stdlib)
     // Compiled against Kotlin 2.1.21's compiler API so bytecode only references symbols
     // that existed in 2.1.x. ServiceLoader picks this impl when the running compiler is

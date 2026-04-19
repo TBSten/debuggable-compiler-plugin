@@ -225,7 +225,7 @@ Kotlin compiler:
 | `debuggable-compiler-compat-k21`   | 2.1.20 | 2.1.21 | New arg/receiver APIs, but `irCall` etc. still on `IrBuilderWithScope` |
 | `debuggable-compiler-compat-k23`   | 2.2.0  | 2.3.20 | `irCall` on `IrBuilder`; new `arguments[param]=` API is the only one used |
 
-At runtime, `IrInjectorLoader` (in `debuggable-compiler-compat/`) enumerates
+At runtime, `IrInjectorLoader` (in `debuggable-compiler/compat/`) enumerates
 `IrInjector.Factory` via `ServiceLoader`, skips any factories whose classes can't be
 linked on the current runtime (e.g. `k23` fails on 2.0.x because `IrBuilder.irCall`
 doesn't exist there), and picks the highest `minVersion` that is still `≤` the running
