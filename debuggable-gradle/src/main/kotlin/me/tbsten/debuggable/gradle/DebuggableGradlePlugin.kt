@@ -11,6 +11,31 @@ class DebuggableGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun apply(target: Project) {
         target.extensions.create("debuggable", DebuggableExtension::class.java)
+
+        // Fail-fast guardrail: if no Kotlin plugin is applied by the time the
+        // project is fully configured, `applyToCompilation` is never called and
+        // the user sees a silent no-op. Warn them instead.
+        target.afterEvaluate {
+            val hasKotlin = KOTLIN_PLUGIN_IDS.any { target.pluginManager.hasPlugin(it) }
+            if (!hasKotlin) {
+                target.logger.warn(
+                    "[Debuggable] `${target.path}` applies `me.tbsten.debuggablecompilerplugin` " +
+                        "but no Kotlin plugin (kotlin-jvm / kotlin-multiplatform / kotlin-android) " +
+                        "is applied. The compiler plugin will have no effect. " +
+                        "Apply the Debuggable plugin on the same module as the Kotlin plugin — " +
+                        "note that applying it only on the root project does NOT propagate to subprojects.",
+                )
+            }
+        }
+    }
+
+    private companion object {
+        private val KOTLIN_PLUGIN_IDS = listOf(
+            "org.jetbrains.kotlin.jvm",
+            "org.jetbrains.kotlin.multiplatform",
+            "org.jetbrains.kotlin.android",
+            "org.jetbrains.kotlin.js",
+        )
     }
 
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
