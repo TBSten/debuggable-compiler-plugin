@@ -140,3 +140,68 @@ internal fun getDefaultRegistryExpression(
         symbol = defaultClass,
     )
 }
+
+/**
+ * For `@Debuggable class … : ViewModel()`, register the registry with the
+ * ViewModel's own lifecycle via `addCloseable(AutoCloseable)`. ViewModel doesn't
+ * itself implement `AutoCloseable` (it accepts closeables as constructor args
+ * / via `addCloseable()`), so the standard `close()`-wrapping path doesn't
+ * apply. `onCleared()` closes everything registered this way.
+ *
+ * Generated shape (conceptual):
+ * ```
+ * class MyVm : ViewModel() {
+ *     private val $$debuggable_registry = DebugCleanupRegistry()
+ *     init { addCloseable($$debuggable_registry) }
+ * }
+ * ```
+ */
+internal fun injectRegistryViaAddCloseable(
+    irClass: IrClass,
+    registryField: IrField,
+    symbolProvider: SymbolProvider,
+    pluginContext: IrPluginContext,
+) {
+    val addCloseableSymbol = symbolProvider.viewModelAddCloseable
+    if (addCloseableSymbol == null) {
+        // ViewModel.addCloseable(AutoCloseable) not resolvable — most likely an
+        // old androidx.lifecycle on the classpath. Surface a warning so users can
+        // upgrade rather than silently skipping cleanup.
+        pluginContext.messageCollector.report(
+            CompilerMessageSeverity.WARNING,
+            "@Debuggable on '${irClass.name}' extends androidx.lifecycle.ViewModel " +
+                "but ViewModel.addCloseable(AutoCloseable) was not found on the classpath. " +
+                "Upgrade androidx.lifecycle:lifecycle-viewmodel to 2.5+ for automatic cleanup.",
+        )
+        return
+    }
+
+    val thisReceiver = irClass.thisReceiver ?: return
+    val initializer = pluginContext.irFactory.createAnonymousInitializer(
+        startOffset = UNDEFINED_OFFSET,
+        endOffset = UNDEFINED_OFFSET,
+        origin = DefinedOrigin,
+        symbol = org.jetbrains.kotlin.ir.symbols.impl.IrAnonymousInitializerSymbolImpl(),
+    ).apply {
+        parent = irClass
+    }
+
+    val builder = DeclarationIrBuilder(pluginContext, initializer.symbol)
+    initializer.body = builder.irBlockBody {
+        +irCall(addCloseableSymbol).apply {
+            insertDispatchReceiver(irGet(thisReceiver))
+            val regularParam = addCloseableSymbol.owner.parameters.firstOrNull {
+                it.kind == IrParameterKind.Regular
+            } ?: return@apply
+            arguments[regularParam] = irGetField(irGet(thisReceiver), registryField)
+        }
+    }
+
+    // Place the init block AFTER the registry property declaration so the field
+    // is guaranteed to be initialized before we pass it to addCloseable().
+    val insertIndex = irClass.declarations.indexOfFirst {
+        it is org.jetbrains.kotlin.ir.declarations.IrProperty &&
+            it.name.asString() == "\$\$debuggable_registry"
+    }.let { if (it >= 0) it + 1 else irClass.declarations.size }
+    irClass.declarations.add(insertIndex, initializer)
+}

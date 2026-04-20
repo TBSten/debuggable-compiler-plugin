@@ -85,4 +85,16 @@ internal class SymbolProvider(private val pluginContext: IrPluginContext) {
             )
         ).single()
     }
+
+    val viewModelAddCloseable: IrSimpleFunctionSymbol? by lazy {
+        pluginContext.referenceFunctions(
+            CallableId(
+                ClassId(
+                    FqName("androidx.lifecycle"),
+                    Name.identifier("ViewModel"),
+                ),
+                Name.identifier("addCloseable"),
+            )
+        ).firstOrNull { sym -> sym.owner.valueParameters.size == 1 }
+    }
 }

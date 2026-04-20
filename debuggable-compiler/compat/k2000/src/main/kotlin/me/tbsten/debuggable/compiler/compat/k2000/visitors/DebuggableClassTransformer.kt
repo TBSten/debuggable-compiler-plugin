@@ -78,11 +78,13 @@ internal class DebuggableClassTransformer(
             )
         }
 
+        val isViewModel = !isSingleton && irClass.extendsAndroidxViewModel()
         if (!isSingleton) {
-            if (!irClass.implementsAutoCloseable()) {
+            if (!irClass.implementsAutoCloseable() && !isViewModel) {
                 messageCollector.report(
                     CompilerMessageSeverity.ERROR,
-                    "@Debuggable requires isSingleton=true or the class to implement AutoCloseable",
+                    "@Debuggable requires isSingleton=true, the class to implement AutoCloseable, " +
+                        "or the class to extend androidx.lifecycle.ViewModel",
                 )
                 return
             }
@@ -181,7 +183,11 @@ internal class DebuggableClassTransformer(
         }
 
         if (!isSingleton && registryField != null) {
-            injectRegistryClose(irClass, registryField, symbolProvider, pluginContext)
+            if (isViewModel) {
+                injectRegistryViaAddCloseable(irClass, registryField, symbolProvider, pluginContext)
+            } else {
+                injectRegistryClose(irClass, registryField, symbolProvider, pluginContext)
+            }
         }
 
         if (options.logAction) {
@@ -229,6 +235,13 @@ internal class DebuggableClassTransformer(
             val fqn = type.classFqName?.asString()
             if (fqn == "java.lang.AutoCloseable" || fqn == "kotlin.AutoCloseable") return@any true
             type.classOrNull?.owner?.implementsAutoCloseable() ?: false
+        }
+
+    private fun IrClass.extendsAndroidxViewModel(): Boolean =
+        superTypes.any { type ->
+            val fqn = type.classFqName?.asString()
+            if (fqn == "androidx.lifecycle.ViewModel") return@any true
+            type.classOrNull?.owner?.extendsAndroidxViewModel() ?: false
         }
 
     // Canonical member names that the Kotlin compiler either inherits from

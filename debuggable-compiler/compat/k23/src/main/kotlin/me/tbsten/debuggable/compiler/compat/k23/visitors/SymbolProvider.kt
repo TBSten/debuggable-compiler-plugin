@@ -85,4 +85,29 @@ internal class SymbolProvider(private val pluginContext: IrPluginContext) {
             )
         ).single()
     }
+
+    /**
+     * `androidx.lifecycle.ViewModel.addCloseable(AutoCloseable)` — 1-arg overload.
+     * Returns null when the consumer does not have `androidx.lifecycle` on the
+     * classpath (pure JVM / KMP targets) or uses a Lifecycle version older than
+     * 2.5 where this overload doesn't exist. Caller is expected to warn gracefully.
+     */
+    val viewModelAddCloseable: IrSimpleFunctionSymbol? by lazy {
+        pluginContext.referenceFunctions(
+            CallableId(
+                ClassId(
+                    FqName("androidx.lifecycle"),
+                    Name.identifier("ViewModel"),
+                ),
+                Name.identifier("addCloseable"),
+            )
+        ).firstOrNull { sym ->
+            val params = sym.owner.parameters.filter {
+                it.kind == org.jetbrains.kotlin.ir.declarations.IrParameterKind.Regular
+            }
+            // `addCloseable(String, AutoCloseable)` vs `addCloseable(AutoCloseable)` —
+            // we want the single-arg variant.
+            params.size == 1
+        }
+    }
 }

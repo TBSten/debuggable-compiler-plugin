@@ -28,7 +28,7 @@ import me.tbsten.debuggable.runtime.annotations.Debuggable
 private val STATUSES = listOf("Idle", "Loading", "Running", "Success", "Error", "Done")
 
 @Debuggable
-class CounterViewModel : ViewModel(), AutoCloseable {
+class CounterViewModel : ViewModel() {
     private val _count = MutableStateFlow(0)
     val count: StateFlow<Int> = _count.asStateFlow()
 
@@ -46,9 +46,6 @@ class CounterViewModel : ViewModel(), AutoCloseable {
         _label.value = STATUSES[labelIndex]
     }
 
-    override fun close() {
-        // called when ViewModel is cleared
-    }
 }
 
 class MainActivity : ComponentActivity() {

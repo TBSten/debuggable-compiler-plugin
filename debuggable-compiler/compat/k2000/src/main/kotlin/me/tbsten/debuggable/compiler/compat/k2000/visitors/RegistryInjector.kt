@@ -129,3 +129,49 @@ internal fun getDefaultRegistryExpression(
         symbol = defaultClass,
     )
 }
+
+/**
+ * ViewModel-path registry cleanup. See k23's `RegistryInjector.kt` for the
+ * full rationale.
+ */
+internal fun injectRegistryViaAddCloseable(
+    irClass: IrClass,
+    registryField: IrField,
+    symbolProvider: SymbolProvider,
+    pluginContext: IrPluginContext,
+) {
+    val addCloseableSymbol = symbolProvider.viewModelAddCloseable
+    if (addCloseableSymbol == null) {
+        pluginContext.messageCollectorK20Compat().report(
+            CompilerMessageSeverity.WARNING,
+            "@Debuggable on '${irClass.name}' extends androidx.lifecycle.ViewModel " +
+                "but ViewModel.addCloseable(AutoCloseable) was not found on the classpath. " +
+                "Upgrade androidx.lifecycle:lifecycle-viewmodel to 2.5+ for automatic cleanup.",
+        )
+        return
+    }
+
+    val thisReceiver = irClass.thisReceiver ?: return
+    val initializer = pluginContext.irFactory.createAnonymousInitializer(
+        startOffset = UNDEFINED_OFFSET,
+        endOffset = UNDEFINED_OFFSET,
+        origin = DefinedOrigin,
+        symbol = org.jetbrains.kotlin.ir.symbols.impl.IrAnonymousInitializerSymbolImpl(),
+    ).apply {
+        parent = irClass
+    }
+
+    val builder = DeclarationIrBuilder(pluginContext, initializer.symbol)
+    initializer.body = builder.irBlockBody {
+        +irCall(addCloseableSymbol).apply {
+            dispatchReceiver = irGet(thisReceiver)
+            putValueArgument(0, irGetField(irGet(thisReceiver), registryField))
+        }
+    }
+
+    val insertIndex = irClass.declarations.indexOfFirst {
+        it is org.jetbrains.kotlin.ir.declarations.IrProperty &&
+            it.name.asString() == "\$\$debuggable_registry"
+    }.let { if (it >= 0) it + 1 else irClass.declarations.size }
+    irClass.declarations.add(insertIndex, initializer)
+}
