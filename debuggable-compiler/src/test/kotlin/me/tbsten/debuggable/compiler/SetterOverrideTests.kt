@@ -198,6 +198,24 @@ class SetterOverrideTests : CompilerTestBase() {
         assertFalse("counter:" in output, "delegated var should not be logged, got: $output")
     }
 
+    @Test fun `intra-class method assignment to var is logged`() {
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            @Debuggable(isSingleton = true) object Counter {
+                var count: Int = 0
+                fun increment() {
+                    count = count + 1
+                }
+            }
+            """.trimIndent(),
+        )
+        val obj = result.getObject("Counter")
+        val output = captureSystemOut { obj.call("increment") }
+        assertTrue("count: 1" in output, "intra-class var assignment must be logged, got: $output")
+    }
+
     @Test fun `data class with focused var — setter is logged, copy is not`() {
         val result = compile(
             // language=kotlin
