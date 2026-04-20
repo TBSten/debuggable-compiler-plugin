@@ -20,4 +20,9 @@ annotation class Debuggable(
      * implementing [DebugLogger], e.g. `@Debuggable(logger = AuthLogger::class)`.
      */
     val logger: KClass<out DebugLogger> = Nothing::class,
+    /**
+     * When true, each `logAction` log entry will include the call-site stack trace
+     * (JVM / Android only). Non-JVM targets emit a no-op and the log remains as-is.
+     */
+    val captureStack: Boolean = false,
 )

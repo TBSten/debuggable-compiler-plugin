@@ -1,3 +1,5 @@
+@file:OptIn(org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI::class)
+
 package me.tbsten.debuggable.compiler.compat.k23.visitors
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -82,6 +84,15 @@ internal class SymbolProvider(private val pluginContext: IrPluginContext) {
             CallableId(
                 FqName("me.tbsten.debuggable.runtime.extensions"),
                 Name.identifier("debuggableSet"),
+            )
+        ).single()
+    }
+
+    val captureCallStackFunction: IrSimpleFunctionSymbol by lazy {
+        pluginContext.referenceFunctions(
+            CallableId(
+                FqName("me.tbsten.debuggable.runtime.stack"),
+                Name.identifier("captureCallStack"),
             )
         ).single()
     }

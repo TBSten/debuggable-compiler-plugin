@@ -209,7 +209,14 @@ internal class DebuggableClassTransformer(
         }
 
         if (options.logAction) {
-            injectLogAction(targetFunctions, irClass, symbolProvider, loggerResolver, pluginContext)
+            injectLogAction(
+                functions = targetFunctions,
+                owningClass = irClass,
+                symbolProvider = symbolProvider,
+                loggerResolver = loggerResolver,
+                pluginContext = pluginContext,
+                captureStack = irClass.captureStackDebuggable(),
+            )
         }
 
         if (options.observeFlow) {
@@ -299,6 +306,18 @@ internal class DebuggableClassTransformer(
                 "Debuggable plugin: could not read isSingleton value from @Debuggable annotation " +
                     "on '${name}' (IrConst.getValue() not found). Treating as non-singleton.",
             )
+            false
+        }
+    }
+
+    // @Debuggable(isSingleton, logger, captureStack) — captureStack is at index 2.
+    private fun IrClass.captureStackDebuggable(): Boolean {
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
+        val arg = annotation.arguments.getOrNull(2) ?: return false
+        if (arg !is IrConst) return false
+        return try {
+            arg.javaClass.getMethod("getValue").invoke(arg) as? Boolean ?: false
+        } catch (_: NoSuchMethodException) {
             false
         }
     }

@@ -19,6 +19,7 @@ internal fun injectLogAction(
     symbolProvider: SymbolProvider,
     loggerResolver: LoggerResolver,
     pluginContext: IrPluginContext,
+    captureStack: Boolean = false,
 ) {
     val logActionParams = symbolProvider.logActionFunction.owner.parameters
         .filter { it.kind == IrParameterKind.Regular }
@@ -28,6 +29,12 @@ internal fun injectLogAction(
         val originalStatements = (function.body as? IrBlockBody)?.statements?.toList()
             ?: continue
 
+        val stackTraceArg = if (captureStack) {
+            builder.irCall(symbolProvider.captureCallStackFunction)
+        } else {
+            builder.irString("")
+        }
+
         val logCall = builder.irCall(symbolProvider.logActionFunction).apply {
             arguments[logActionParams[0]] = builder.irString(function.name.asString())
             arguments[logActionParams[1]] = builder.irVararg(
@@ -36,6 +43,7 @@ internal fun injectLogAction(
                     .map { builder.irGet(it) },
             )
             arguments[logActionParams[2]] = loggerResolver.resolve(owningClass)
+            arguments[logActionParams[3]] = stackTraceArg
         }
 
         function.body = builder.irBlockBody {

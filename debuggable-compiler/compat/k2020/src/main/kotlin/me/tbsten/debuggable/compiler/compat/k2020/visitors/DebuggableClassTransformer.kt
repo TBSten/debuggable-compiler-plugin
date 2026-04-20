@@ -191,7 +191,14 @@ internal class DebuggableClassTransformer(
         }
 
         if (options.logAction) {
-            injectLogAction(targetFunctions, irClass, symbolProvider, loggerResolver, pluginContext)
+            injectLogAction(
+                functions = targetFunctions,
+                owningClass = irClass,
+                symbolProvider = symbolProvider,
+                loggerResolver = loggerResolver,
+                pluginContext = pluginContext,
+                captureStack = irClass.captureStackDebuggable(),
+            )
         }
 
         if (options.observeFlow) {
@@ -262,6 +269,14 @@ internal class DebuggableClassTransformer(
     private fun IrClass.isSingletonDebuggable(): Boolean {
         val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
         val arg = annotation.getValueArgument(0) ?: return false
+        if (arg !is IrConst<*>) return false
+        return (arg.value as? Boolean) ?: false
+    }
+
+    // @Debuggable(isSingleton, logger, captureStack) — captureStack is at index 2.
+    private fun IrClass.captureStackDebuggable(): Boolean {
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
+        val arg = annotation.getValueArgument(2) ?: return false
         if (arg !is IrConst<*>) return false
         return (arg.value as? Boolean) ?: false
     }

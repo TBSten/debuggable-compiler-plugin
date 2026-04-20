@@ -18,11 +18,18 @@ internal fun injectLogAction(
     symbolProvider: SymbolProvider,
     loggerResolver: LoggerResolver,
     pluginContext: IrPluginContext,
+    captureStack: Boolean = false,
 ) {
     for (function in functions) {
         val builder = DeclarationIrBuilder(pluginContext, function.symbol)
         val originalStatements = (function.body as? IrBlockBody)?.statements?.toList()
             ?: continue
+
+        val stackTraceArg = if (captureStack) {
+            builder.irCall(symbolProvider.captureCallStackFunction)
+        } else {
+            builder.irString("")
+        }
 
         val logCall = builder.irCall(symbolProvider.logActionFunction).apply {
             putValueArgument(0, builder.irString(function.name.asString()))
@@ -34,6 +41,7 @@ internal fun injectLogAction(
                 ),
             )
             putValueArgument(2, loggerResolver.resolve(owningClass))
+            putValueArgument(3, stackTraceArg)
         }
 
         function.body = builder.irBlockBody {

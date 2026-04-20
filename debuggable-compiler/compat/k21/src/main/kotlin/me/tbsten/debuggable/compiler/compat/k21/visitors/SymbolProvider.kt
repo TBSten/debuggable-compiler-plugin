@@ -86,6 +86,15 @@ internal class SymbolProvider(private val pluginContext: IrPluginContext) {
         ).single()
     }
 
+    val captureCallStackFunction: IrSimpleFunctionSymbol by lazy {
+        pluginContext.referenceFunctions(
+            CallableId(
+                FqName("me.tbsten.debuggable.runtime.stack"),
+                Name.identifier("captureCallStack"),
+            )
+        ).single()
+    }
+
     val viewModelAddCloseable: IrSimpleFunctionSymbol? by lazy {
         pluginContext.referenceFunctions(
             CallableId(
