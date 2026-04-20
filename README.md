@@ -49,13 +49,14 @@ class SearchViewModel : ViewModel() {
 }
 ```
 
-Plain `var` properties that are **not** `Flow` / `State` can be tracked too — opt in with `@FocusDebuggable` and the plugin rewrites the setter to log every assignment:
+Plain `var` properties that are **not** `Flow` / `State` are also tracked by default — the plugin rewrites the setter to log every assignment. Use `@IgnoreDebuggable` to opt a specific property out:
 
 ```kotlin
 @Debuggable(isSingleton = true)
 object UserForm {
-    @FocusDebuggable var name: String = ""
-    @FocusDebuggable var age: Int = 0
+    var name: String = ""   // tracked automatically
+    var age: Int = 0        // tracked automatically
+    @IgnoreDebuggable var internal: String = ""  // excluded
 }
 // UserForm.name = "daisy"   → "[Debuggable] name: daisy"
 // UserForm.age  = 30        → "[Debuggable] age: 30"
@@ -119,7 +120,8 @@ import me.tbsten.debuggable.runtime.logging.*
 
 // (1) Per-class override
 object AuthLogger : DebugLogger {
-    override fun log(message: String) = Log.d("Auth", message)
+    override fun log(receiver: Any?, propertyName: String, value: Any?) =
+        Log.d("Auth", "$propertyName: $value")
 }
 
 @Debuggable(isSingleton = true, logger = AuthLogger::class)
@@ -287,18 +289,27 @@ class GlobalSettings { ... }
 ```
 
 ### 2. Tracking Filters
-You can focus on specific properties or exclude noise.
+By default every `Flow`, `State`, and `var` in a `@Debuggable` class is tracked. Two annotations let you adjust that:
+
+- `@IgnoreDebuggable` — exclude a single property or function from tracking (default mode).
+- `@FocusDebuggable` — switch the entire class into **focus mode**: only members explicitly annotated with `@FocusDebuggable` are tracked; everything else is ignored.
 
 ```kotlin
 @Debuggable
 class ComplexViewModel : ViewModel() {
-    // When @Focus is present, "only" this one becomes the tracking target (Focus mode)
-    @FocusDebuggable
-    val targetState = mutableStateOf(0)
+    val trackedState = mutableStateOf(0)   // tracked by default
 
-    // In normal mode, adding this excludes it from tracking
     @IgnoreDebuggable
-    val noiseState = mutableStateOf("")
+    val noiseState = mutableStateOf("")    // excluded
+}
+
+// Focus mode — only @FocusDebuggable members are tracked
+@Debuggable
+class SelectiveViewModel : ViewModel() {
+    @FocusDebuggable
+    val importantState = mutableStateOf(0)  // tracked
+
+    val otherState = mutableStateOf("")     // ignored (focus mode active)
 }
 ```
 

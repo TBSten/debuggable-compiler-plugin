@@ -47,13 +47,14 @@ class SearchViewModel : ViewModel() {
 }
 ```
 
-`Flow` / `State` 以外の普通の `var` property も追跡できます。`@FocusDebuggable` を付けると setter が書き換わり、代入のたびにログが出ます:
+`Flow` / `State` 以外の普通の `var` property も**デフォルトで**追跡されます。setter が書き換わり、代入のたびにログが出ます。`@IgnoreDebuggable` で個別に除外できます:
 
 ```kotlin
 @Debuggable(isSingleton = true)
 object UserForm {
-    @FocusDebuggable var name: String = ""
-    @FocusDebuggable var age: Int = 0
+    var name: String = ""   // 自動で追跡
+    var age: Int = 0        // 自動で追跡
+    @IgnoreDebuggable var internal: String = ""  // 除外
 }
 // UserForm.name = "daisy"   → "[Debuggable] name: daisy"
 // UserForm.age  = 30        → "[Debuggable] age: 30"
@@ -118,7 +119,8 @@ import me.tbsten.debuggable.runtime.logging.*
 
 // (1) 特定クラスだけ別ロガーに流す
 object AuthLogger : DebugLogger {
-    override fun log(message: String) = Log.d("Auth", message)
+    override fun log(receiver: Any?, propertyName: String, value: Any?) =
+        Log.d("Auth", "$propertyName: $value")
 }
 
 @Debuggable(isSingleton = true, logger = AuthLogger::class)
@@ -249,9 +251,9 @@ class MyApp : Application() {
 
 プロパティ単位 / クラス単位の除外:
 
-- 単一の `State` / `Flow` を除外: `@IgnoreDebuggable`
+- 単一の property を除外: `@IgnoreDebuggable`
 - 機密値を redact してから forward する logger: `@Debuggable(logger = MyLogger::class)`
-- 「この property だけ追跡」モード: `@FocusDebuggable`
+- 「このメンバーだけ追跡」フォーカスモード: `@FocusDebuggable`（付いたメンバーだけ追跡、それ以外は無視）
 
 R8 / ProGuard: runtime AAR は `META-INF/proguard/debuggable-runtime.pro` に consumer rules を同梱しています。Android の consumer 側で追加の keep rule は不要です。
 
@@ -285,18 +287,27 @@ class GlobalSettings { ... }
 ```
 
 ### 2. トラッキングのフィルタリング
-特定のプロパティだけに注目したり、ノイズを除外したりできます。
+デフォルトでは `@Debuggable` クラス内の全 `Flow` / `State` / `var` が追跡されます。2つのアノテーションで調整できます。
+
+- `@IgnoreDebuggable` — 特定の property / 関数を除外（通常モード）
+- `@FocusDebuggable` — クラス全体を**フォーカスモード**に切り替え。付いたメンバーだけ追跡し、それ以外は無視
 
 ```kotlin
 @Debuggable
 class ComplexViewModel : ViewModel() {
-    // @Focus がある場合、これ "だけ" が追跡対象になる（Focusモード）
-    @FocusDebuggable
-    val targetState = mutableStateOf(0)
+    val trackedState = mutableStateOf(0)   // デフォルトで追跡
 
-    // 通常モード時、これをつけると追跡から除外される
     @IgnoreDebuggable
-    val noiseState = mutableStateOf("")
+    val noiseState = mutableStateOf("")    // 除外
+}
+
+// フォーカスモード — @FocusDebuggable のメンバーだけ追跡
+@Debuggable
+class SelectiveViewModel : ViewModel() {
+    @FocusDebuggable
+    val importantState = mutableStateOf(0)  // 追跡
+
+    val otherState = mutableStateOf("")     // 無視（フォーカスモード中）
 }
 ```
 
