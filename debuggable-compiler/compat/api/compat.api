@@ -1,3 +1,10 @@
+public final class me/tbsten/debuggable/compiler/compat/AnnotationFqNames {
+	public static final field INSTANCE Lme/tbsten/debuggable/compiler/compat/AnnotationFqNames;
+	public final fun getDEBUGGABLE ()Lorg/jetbrains/kotlin/name/FqName;
+	public final fun getFOCUS_DEBUGGABLE ()Lorg/jetbrains/kotlin/name/FqName;
+	public final fun getIGNORE_DEBUGGABLE ()Lorg/jetbrains/kotlin/name/FqName;
+}
+
 public abstract interface class me/tbsten/debuggable/compiler/compat/IrInjector {
 	public abstract fun transform (Lorg/jetbrains/kotlin/ir/declarations/IrModuleFragment;Lorg/jetbrains/kotlin/backend/common/extensions/IrPluginContext;Lme/tbsten/debuggable/compiler/compat/IrInjector$Options;)V
 }

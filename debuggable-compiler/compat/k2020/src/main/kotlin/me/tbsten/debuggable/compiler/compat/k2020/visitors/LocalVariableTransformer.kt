@@ -3,7 +3,7 @@
 package me.tbsten.debuggable.compiler.compat.k2020.visitors
 
 import me.tbsten.debuggable.compiler.compat.IrInjector
-import me.tbsten.debuggable.compiler.compat.k2020.util.AnnotationFqNames
+import me.tbsten.debuggable.compiler.compat.AnnotationFqNames
 import me.tbsten.debuggable.compiler.compat.k2020.util.isDebuggableTarget
 import me.tbsten.debuggable.compiler.compat.k2020.util.isFlow
 import me.tbsten.debuggable.compiler.compat.k2020.util.isState

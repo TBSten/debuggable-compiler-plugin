@@ -3,7 +3,7 @@
 package me.tbsten.debuggable.compiler.compat.k21.visitors
 
 import me.tbsten.debuggable.compiler.compat.IrInjector
-import me.tbsten.debuggable.compiler.compat.k21.util.AnnotationFqNames
+import me.tbsten.debuggable.compiler.compat.AnnotationFqNames
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET

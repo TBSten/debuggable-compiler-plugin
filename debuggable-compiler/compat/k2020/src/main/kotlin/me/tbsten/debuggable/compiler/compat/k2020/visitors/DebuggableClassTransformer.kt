@@ -5,7 +5,7 @@ package me.tbsten.debuggable.compiler.compat.k2020.visitors
 import me.tbsten.debuggable.compiler.compat.IrInjector
 import me.tbsten.debuggable.compiler.compat.k2020.getAnnotationCompat
 import me.tbsten.debuggable.compiler.compat.k2020.messageCollectorK20Compat
-import me.tbsten.debuggable.compiler.compat.k2020.util.AnnotationFqNames
+import me.tbsten.debuggable.compiler.compat.AnnotationFqNames
 import me.tbsten.debuggable.compiler.compat.k2020.util.isDebuggableTarget
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
