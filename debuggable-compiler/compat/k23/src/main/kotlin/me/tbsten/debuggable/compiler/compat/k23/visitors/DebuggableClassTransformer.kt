@@ -157,17 +157,16 @@ internal class DebuggableClassTransformer(
         }
 
         // Setter-override targets: plain `var` properties with a backing field whose
-        // type is NOT a Flow/State (those already go through injectFlowObservations).
-        // Currently opt-in via `@FocusDebuggable` — matches existing UX where `focusMode`
-        // is explicit. This keeps unrelated `var` fields (temporary caches, internal
-        // state) out of the log by default.
+        // type is NOT a Flow/State (those go through injectFlowObservations instead).
+        // Mirrors the Flow/State policy: tracked by default, opt-out via @IgnoreDebuggable.
         val setterOverrideProperties = properties.filter { property ->
             if (!property.isVar) return@filter false
             if (property.backingField == null) return@filter false
             if (property.setter?.isFakeOverride != false) return@filter false
             val type = property.getter?.returnType ?: return@filter false
             if (type.isDebuggableTarget()) return@filter false
-            property.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
+            if (focusMode) property.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
+            else !property.hasAnnotation(AnnotationFqNames.IGNORE_DEBUGGABLE)
         }
 
         val targetFunctions = functions.filter { fn ->
@@ -184,11 +183,11 @@ internal class DebuggableClassTransformer(
         }
 
         // Warn: @Debuggable class with no trackable members
-        if (targetProperties.isEmpty() && targetFunctions.isEmpty()) {
+        if (targetProperties.isEmpty() && setterOverrideProperties.isEmpty() && targetFunctions.isEmpty()) {
             messageCollector.report(
                 CompilerMessageSeverity.WARNING,
                 "@Debuggable on '${irClass.name}' has no effect: " +
-                    "no Flow/State properties or public methods to track",
+                    "no Flow/State properties, var properties, or public methods to track",
             )
         }
 

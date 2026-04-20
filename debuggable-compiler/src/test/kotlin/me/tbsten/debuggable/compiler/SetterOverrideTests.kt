@@ -6,12 +6,13 @@ import kotlin.test.assertTrue
 import kotlin.test.assertEquals
 
 /**
- * `@FocusDebuggable` on a plain `var` property now rewires its setter to log
- * every mutation via the new [me.tbsten.debuggable.runtime.extensions.debuggableSet]
- * runtime helper. These tests exercise:
+ * Plain `var` properties are logged by default (mirrors Flow/State behavior).
+ * Use `@IgnoreDebuggable` to opt out; use `@FocusDebuggable` in focus-mode.
+ * These tests exercise:
  *
- * - the happy path (primitive and reference types),
- * - absence of logging for untagged `var` properties (opt-in-only),
+ * - default-track var (no annotation needed),
+ * - opt-out via @IgnoreDebuggable,
+ * - opt-in via @FocusDebuggable in focus-mode,
  * - absence of logging for `val` (no setter to rewrite).
  */
 class SetterOverrideTests : CompilerTestBase() {
@@ -58,7 +59,7 @@ class SetterOverrideTests : CompilerTestBase() {
         assertTrue("name: daisy" in output, "should log string assignment, got: $output")
     }
 
-    @Test fun `unfocused var is NOT logged (opt-in only)`() {
+    @Test fun `plain var is logged by default (no annotation needed)`() {
         val result = compile(
             // language=kotlin
             """
@@ -71,7 +72,24 @@ class SetterOverrideTests : CompilerTestBase() {
         val obj = result.getObject("Form")
         val setter = obj.javaClass.getDeclaredMethod("setCounter", Int::class.javaPrimitiveType)
         val output = captureSystemOut { setter.invoke(obj, 7) }
-        assertFalse("counter:" in output, "plain var without @FocusDebuggable should be silent, got: $output")
+        assertTrue("counter: 7" in output, "plain var should be logged by default, got: $output")
+    }
+
+    @Test fun `var with @IgnoreDebuggable is NOT logged`() {
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.IgnoreDebuggable
+            @Debuggable(isSingleton = true) object Form {
+                @IgnoreDebuggable var counter: Int = 0
+            }
+            """.trimIndent(),
+        )
+        val obj = result.getObject("Form")
+        val setter = obj.javaClass.getDeclaredMethod("setCounter", Int::class.javaPrimitiveType)
+        val output = captureSystemOut { setter.invoke(obj, 7) }
+        assertFalse("counter:" in output, "var with @IgnoreDebuggable should be silent, got: $output")
     }
 
     @Test fun `val property is unaffected (no setter to rewrite)`() {

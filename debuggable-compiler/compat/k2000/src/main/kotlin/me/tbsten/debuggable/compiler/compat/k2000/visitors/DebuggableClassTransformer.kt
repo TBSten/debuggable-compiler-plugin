@@ -156,7 +156,8 @@ internal class DebuggableClassTransformer(
             if (property.setter?.isFakeOverride != false) return@filter false
             val type = property.getter?.returnType ?: return@filter false
             if (type.isDebuggableTarget()) return@filter false
-            property.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
+            if (focusMode) property.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
+            else !property.hasAnnotation(AnnotationFqNames.IGNORE_DEBUGGABLE)
         }
 
         val targetFunctions = functions.filter { fn ->
@@ -168,11 +169,11 @@ internal class DebuggableClassTransformer(
             else true
         }
 
-        if (targetProperties.isEmpty() && targetFunctions.isEmpty()) {
+        if (targetProperties.isEmpty() && setterOverrideProperties.isEmpty() && targetFunctions.isEmpty()) {
             messageCollector.report(
                 CompilerMessageSeverity.WARNING,
                 "@Debuggable on '${irClass.name}' has no effect: " +
-                    "no Flow/State properties or public methods to track",
+                    "no Flow/State properties, var properties, or public methods to track",
             )
         }
 
