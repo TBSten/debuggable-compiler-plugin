@@ -12,6 +12,10 @@ class RepositoryStories : UserStoryTestBase() {
         UserRepository.users.value = emptyList()
         CachedUserRepository.users.value = emptyList()
         CachedUserRepository.sensitiveData.value = ""
+        // The StateFlow resets above trigger debuggableFlow coroutines on Dispatchers.Default.
+        // Wait for those async emissions to settle so they don't race with the test body.
+        Thread.sleep(50)
+        logger.clear()
     }
 
     // --- Flow tracking + logAction tests (UserRepository — no focus mode) ---
