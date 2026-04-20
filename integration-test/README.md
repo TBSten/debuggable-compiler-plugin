@@ -11,9 +11,9 @@ From the repo root, publish the plugin and runtime to your local Maven repositor
 ```
 
 This publishes:
-- `me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.5` (KMP targets)
-- `me.tbsten.debuggablecompilerplugin:debuggable-compiler:0.1.5`
-- `me.tbsten.debuggablecompilerplugin:debuggable-gradle:0.1.5`
+- `me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.6` (KMP targets)
+- `me.tbsten.debuggablecompilerplugin:debuggable-compiler:0.1.6`
+- `me.tbsten.debuggablecompilerplugin:debuggable-gradle:0.1.6`
 
 Re-run after any change to the plugin or runtime.
 
@@ -88,14 +88,14 @@ object CounterStore {
 plugins {
     kotlin("multiplatform") version "2.3.20"
     id("org.jetbrains.compose") version "1.10.3"
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.5"   // ← apply the plugin
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.6"   // ← apply the plugin
 }
 
 kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.5")
+                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.6")
                 // ...
             }
         }
@@ -166,7 +166,7 @@ plugins {
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.5")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.6")
     // ...
 }
 ```

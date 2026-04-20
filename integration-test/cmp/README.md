@@ -66,14 +66,14 @@ object CounterStore {
 plugins {
     kotlin("multiplatform") version "2.3.20"
     id("org.jetbrains.compose") version "1.10.3"
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.5"   // ← apply the plugin
+    id("me.tbsten.debuggablecompilerplugin") version "0.1.6"   // ← apply the plugin
 }
 
 kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.5")
+                implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.6")
                 // ...
             }
         }
