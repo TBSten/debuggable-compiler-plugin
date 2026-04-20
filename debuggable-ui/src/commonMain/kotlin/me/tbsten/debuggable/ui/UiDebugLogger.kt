@@ -56,7 +56,8 @@ class UiDebugLogger(
     /** The currently-visible log entries, oldest first. */
     val entries: StateFlow<List<LogEntry>> = _entries.asStateFlow()
 
-    override fun log(message: String) {
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
+        val message = if (value === DebugLogger.NoValue) propertyName else "$propertyName: $value"
         val entry = synchronized(lock) {
             LogEntry(
                 sequence = ++sequence,
