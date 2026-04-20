@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import me.tbsten.debuggable.runtime.annotations.Debuggable
+import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
 
 private val STATUSES = listOf("Idle", "Loading", "Running", "Success", "Error", "Done")
 
@@ -35,7 +36,8 @@ class CounterViewModel : ViewModel() {
     private val _label = MutableStateFlow(STATUSES.first())
     val label: StateFlow<String> = _label.asStateFlow()
 
-    private var labelIndex = 0
+    @FocusDebuggable
+    var labelIndex = 0
 
     fun increment() {
         _count.update { it + 1 }

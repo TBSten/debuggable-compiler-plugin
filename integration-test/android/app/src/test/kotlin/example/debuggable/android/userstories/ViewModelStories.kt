@@ -48,6 +48,15 @@ class ViewModelStories : UserStoryTestBase() {
             "flow change after clear must not be logged, got: ${logger.messages}")
     }
 
+    @Test fun `plain var is logged by default`() {
+        val vm = SampleViewModel()
+        vm.label = "hello"
+        Thread.sleep(50)
+        assertTrue(logger.messages.any { "label" in it && "hello" in it },
+            "plain var (no annotation) must be logged by default, got: ${logger.messages}")
+        vm.clearForTest()
+    }
+
     @Test fun `@IgnoreDebuggable var is never logged`() {
         val vm = SampleViewModel()
         vm.authToken = "secret"

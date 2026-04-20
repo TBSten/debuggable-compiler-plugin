@@ -20,6 +20,7 @@ object SampleViewModelLogger : DebugLogger {
 class SampleViewModel : ViewModel() {
     val messages = MutableStateFlow<List<String>>(emptyList())
     val isLoading = MutableStateFlow(false)
+    var label: String = ""
     @IgnoreDebuggable var authToken: String = ""
 
     fun sendMessage(text: String) {
