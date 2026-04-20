@@ -10,26 +10,6 @@ The compiler takes care of the tedious work of instrumenting logs and preventing
 
 ### 1. Installation
 
-Available on Maven Central. Two things to wire up: the Gradle plugin (which applies the compiler plugin to your Kotlin compilations) and the runtime library (which the injected code calls into).
-
-Make sure `mavenCentral()` is in both your plugin and dependency repositories:
-
-```kotlin
-// settings.gradle.kts
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        google() // only needed for Android
-    }
-}
-```
-
 Apply the plugin in your module's `build.gradle.kts`. The runtime library is added automatically — no extra `implementation(...)` line needed.
 
 **Kotlin/JVM, Android, KMP (JVM target)**
