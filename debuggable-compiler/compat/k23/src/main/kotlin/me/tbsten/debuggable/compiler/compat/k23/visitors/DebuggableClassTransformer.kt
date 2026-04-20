@@ -208,7 +208,8 @@ internal class DebuggableClassTransformer(
             }
         }
 
-        if (options.logAction) {
+        // When diagram=true, call-site DiagramCallTransformer handles logging instead.
+        if (options.logAction && !irClass.diagramDebuggable()) {
             injectLogAction(
                 functions = targetFunctions,
                 owningClass = irClass,
@@ -306,6 +307,18 @@ internal class DebuggableClassTransformer(
                 "Debuggable plugin: could not read isSingleton value from @Debuggable annotation " +
                     "on '${name}' (IrConst.getValue() not found). Treating as non-singleton.",
             )
+            false
+        }
+    }
+
+    // @Debuggable(isSingleton, logger, captureStack, diagram) — diagram is at index 3.
+    private fun IrClass.diagramDebuggable(): Boolean {
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
+        val arg = annotation.arguments.getOrNull(3) ?: return false
+        if (arg !is IrConst) return false
+        return try {
+            arg.javaClass.getMethod("getValue").invoke(arg) as? Boolean ?: false
+        } catch (_: NoSuchMethodException) {
             false
         }
     }

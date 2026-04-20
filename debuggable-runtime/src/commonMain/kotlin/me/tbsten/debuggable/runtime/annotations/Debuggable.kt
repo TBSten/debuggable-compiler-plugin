@@ -25,4 +25,10 @@ annotation class Debuggable(
      * (JVM / Android only). Non-JVM targets emit a no-op and the log remains as-is.
      */
     val captureStack: Boolean = false,
+    /**
+     * When true, enables Power-Assert-style diagram logging for method arguments.
+     * Each method call will log intermediate variable values alongside the result.
+     * Example: `process(h + f)  // h=123, f=456`
+     */
+    val diagram: Boolean = false,
 )

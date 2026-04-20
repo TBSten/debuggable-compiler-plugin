@@ -2,7 +2,10 @@ package me.tbsten.debuggable.compiler.compat.k23
 
 import me.tbsten.debuggable.compiler.compat.IrInjector
 import me.tbsten.debuggable.compiler.compat.k23.visitors.DebuggableClassTransformer
+import me.tbsten.debuggable.compiler.compat.k23.visitors.DiagramCallTransformer
 import me.tbsten.debuggable.compiler.compat.k23.visitors.LocalVariableTransformer
+import me.tbsten.debuggable.compiler.compat.k23.visitors.LoggerResolver
+import me.tbsten.debuggable.compiler.compat.k23.visitors.SymbolProvider
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
@@ -24,6 +27,11 @@ class DebuggableIrInjector : IrInjector {
         moduleFragment.transformChildrenVoid(DebuggableClassTransformer(pluginContext, options))
         if (options.observeFlow) {
             moduleFragment.transformChildrenVoid(LocalVariableTransformer(pluginContext, options))
+        }
+        if (options.logAction) {
+            val symbolProvider = SymbolProvider(pluginContext)
+            val loggerResolver = LoggerResolver(symbolProvider, options, pluginContext)
+            moduleFragment.transformChildrenVoid(DiagramCallTransformer(pluginContext, symbolProvider, loggerResolver))
         }
         moduleFragment.patchDeclarationParents()
     }
