@@ -95,6 +95,21 @@ internal class SymbolProvider(private val pluginContext: IrPluginContext) {
         ).single()
     }
 
+    val diagramCaptureClass: IrClassSymbol by lazy {
+        pluginContext.referenceClass(
+            ClassId.fromString("me/tbsten/debuggable/runtime/diagram/DiagramCapture")
+        ) ?: error("DiagramCapture not found on classpath")
+    }
+
+    val logDiagramFunction: IrSimpleFunctionSymbol by lazy {
+        pluginContext.referenceFunctions(
+            CallableId(
+                FqName("me.tbsten.debuggable.runtime.diagram"),
+                Name.identifier("logDiagram"),
+            )
+        ).single()
+    }
+
     val viewModelAddCloseable: IrSimpleFunctionSymbol? by lazy {
         pluginContext.referenceFunctions(
             CallableId(

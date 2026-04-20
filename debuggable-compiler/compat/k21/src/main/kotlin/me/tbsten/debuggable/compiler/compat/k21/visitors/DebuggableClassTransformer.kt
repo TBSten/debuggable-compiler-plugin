@@ -194,7 +194,7 @@ internal class DebuggableClassTransformer(
             }
         }
 
-        if (options.logAction) {
+        if (options.logAction && !irClass.diagramDebuggable()) {
             injectLogAction(
                 functions = targetFunctions,
                 owningClass = irClass,
@@ -286,6 +286,15 @@ internal class DebuggableClassTransformer(
             )
             false
         }
+    }
+
+    private fun IrClass.diagramDebuggable(): Boolean {
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
+        val arg = annotation.arguments.getOrNull(3) ?: return false
+        if (arg !is IrConst) return false
+        return try {
+            arg.javaClass.getMethod("getValue").invoke(arg) as? Boolean ?: false
+        } catch (_: NoSuchMethodException) { false }
     }
 
     // @Debuggable(isSingleton, logger, captureStack) — captureStack is at index 2.

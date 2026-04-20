@@ -190,7 +190,7 @@ internal class DebuggableClassTransformer(
             }
         }
 
-        if (options.logAction) {
+        if (options.logAction && !irClass.diagramDebuggable()) {
             injectLogAction(
                 functions = targetFunctions,
                 owningClass = irClass,
@@ -269,6 +269,13 @@ internal class DebuggableClassTransformer(
     private fun IrClass.isSingletonDebuggable(): Boolean {
         val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
         val arg = annotation.getValueArgument(0) ?: return false
+        if (arg !is IrConst<*>) return false
+        return (arg.value as? Boolean) ?: false
+    }
+
+    private fun IrClass.diagramDebuggable(): Boolean {
+        val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
+        val arg = annotation.getValueArgument(3) ?: return false
         if (arg !is IrConst<*>) return false
         return (arg.value as? Boolean) ?: false
     }
