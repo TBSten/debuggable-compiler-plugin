@@ -20,3 +20,5 @@ Pods/
 
 .claude/*.local.*
 .claude/scheduled_tasks.lock
+.claude/worktrees/
+.claude/skills/*-workspace/

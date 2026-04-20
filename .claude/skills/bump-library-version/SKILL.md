@@ -39,6 +39,18 @@ description: >
 (README 内にまだ 0.1.0 が残っている等) を拾えない。この skill は whitelist 方式で
 **各ファイルの現在値を個別に読んで差し替える** ため、stale も直る。
 
+## 重要: refactor drift への耐性
+
+この skill の whitelist は「すべての fallback literal が gradle.properties 参照に
+refactor 済み」の前提で書かれている。だが branch によっては refactor が落ちていて
+`?: "X.Y.Z"` リテラルが残っていることがある (実際 iteration-1 で、私 Claude が
+refactor を local main にしか commit せず、origin/main から fork された subagent
+worktree が refactor 前の世界を見て fallback を見逃した)。
+
+**対策**: Step 4.5 の `grep` sweep を **必ず** 実行する。whitelist を「完全なリスト」
+ではなく「通常ケースの基本リスト」として扱い、current 値でもう一度 grep してから
+足りない分を拾うこと。これで whitelist drift と refactor drift の両方に強くなる。
+
 ## 触らないもの (明示的に除外)
 
 - `integration-test/android/app/build.gradle.kts` の `versionName = "X.Y.Z"` — Android
@@ -132,6 +144,46 @@ done
 
 実用的には **各 file に対して Edit ツールの replace_all=true で old→new を個別適用**
 するのが安全で読みやすい。
+
+### Step 4.5. defensive sweep (必須 — whitelist の穴を拾う)
+
+whitelist は **「refactor がすでに完了している前提」** で書かれている。現実には、
+refactor の取りこぼしで `?: "X.Y.Z"` みたいなリテラル fallback が
+`*.gradle.kts` に残っていることがある (iteration-1 で実際に発生)。whitelist を
+鵜呑みにすると見逃すため、apply 直前に必ず以下の sweep を追加する:
+
+```bash
+# canonical 値 (= Step 4 で確定した current) を使って、.gradle.kts 内の
+# literal fallback を grep。見つかったら whitelist を暗黙拡張して同時に bump。
+grep -rEn '["\'']'"$current"'["\''"]' \
+    integration-test/*/build.gradle.kts \
+    integration-test/*/settings.gradle.kts 2>/dev/null
+```
+
+ヒットした場合は:
+
+1. プレビューに **"(defensive sweep ヒット)"** ラベル付きで追加表示
+2. そのファイルも Step 4 の方式 (file-local `old` → `target` 置換) で更新
+3. commit の body にその file も含める
+
+また稀に、 refactor で落としたはずの literal が再 introduction されていたら
+(reviewer が書き戻した等)、ついでに **refactor 後の形に書き直すのもアリ**:
+
+```kotlin
+// before (literal)
+val debuggableVersion: String = (findProperty("integration.debuggable") as String?) ?: "0.1.5"
+
+// after (gradle.properties 参照)
+val debuggableVersion: String = (findProperty("integration.debuggable") as String?)
+    ?: (findProperty("debuggable.version") as String?)
+    ?: error("debuggable.version missing — set it in gradle.properties or pass -Pintegration.debuggable=…")
+```
+
+ただし 「bump」 の task にこの refactor まで混ぜるとスコープが広がるので、**判断基準**:
+
+- literal fallback が **1 〜 2 行程度** → 同じ commit で書き直しついでにやる
+- **3 箇所以上 or 読み方が非自明** → 別チケットとしてバグ化 (`.local/tickets/…`)
+  してから literal だけ書き換える最小 bump に留める
 
 ### Step 5. sanity check
 
