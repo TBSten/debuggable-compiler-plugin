@@ -37,3 +37,8 @@ object UserForm {
 object TracedCalc {
     fun compute(x: Int): Int = x * 2
 }
+
+@Debuggable(isSingleton = true, diagram = true)
+object DiagramCalc {
+    fun add(a: Int, b: Int): Int = a + b
+}

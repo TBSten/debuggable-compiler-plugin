@@ -64,7 +64,7 @@ kotlin {
 
 The runtime ships for `jvm`, `androidTarget`, `js`, `wasmJs`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`, `linuxX64`, and `mingwX64`.
 
-On Android, logs go to Logcat with tag `"Debuggable"` by default (via `AndroidLogcatLogger`). Everywhere else, they go to stdout with a `[Debuggable]` prefix. See [§3 Replacing the Logger](#3-replacing-the-logger) to redirect.
+On Android, logs go to Logcat with tag `"Debuggable"` by default (via `AndroidLogcatLogger`). Everywhere else, they go to stdout with a `[Debuggable]` prefix. See [§5 Replacing the Logger](#5-replacing-the-logger) to redirect.
 
 ### 2. Basic Usage
 Simply annotate a class with `@Debuggable`, and the `State` and `Flow` within it will be tracked automatically.
@@ -93,7 +93,29 @@ object UserForm {
 // UserForm.age  = 30        → "[Debuggable] age: 30"
 ```
 
-### 3. Capturing Call Stack (JVM / Android only)
+### 3. Diagram Logging (Power-Assert Style)
+
+Add `diagram = true` to log intermediate variable values at each method call site — similar to [Kotlin Power-Assert](https://kotlinlang.org/docs/power-assert.html). The compiler rewrites call sites to capture the value of each input variable and emit them alongside the call:
+
+```kotlin
+@Debuggable(isSingleton = true, diagram = true)
+object Calc {
+    fun process(value: Int): Int = value * 2
+}
+
+fun example() {
+    val h = 123
+    val f = 456
+    Calc.process(h + f)
+}
+// Logged: process(h + f)  // h=123, f=456
+```
+
+The inline comment shows each leaf variable and its concrete value at the moment of the call, making it easy to understand what was actually passed without a debugger.
+
+> **Note**: When the argument is a literal constant (e.g. `Calc.process(42)`), there are no variable captures and the log is omitted. `diagram = true` also replaces the normal `logAction` log for that class — functions are not double-logged.
+
+### 4. Capturing Call Stack (JVM / Android only)
 
 Add `captureStack = true` to append the caller's stack trace to every `logAction` log entry, making it easy to trace *where* a method was called from.
 
@@ -111,7 +133,7 @@ object Counter {
 
 > **Note**: Stack capture is only supported on JVM and Android targets. On JS, wasmJs, and Native the log is emitted normally without a stack trace.
 
-### 4. Replacing the Logger
+### 5. Replacing the Logger
 
 By default, logs go to Android Logcat (tag `"Debuggable"`) on Android and stdout (`[Debuggable] …` prefix) everywhere else. You can route them to Timber, a file, a test collector, or anything else using any of three mechanisms (higher wins):
 
@@ -175,7 +197,7 @@ DebuggableLogViewer(uiLogger, modifier = Modifier.fillMaxSize())
 
 `UiDebugLogger` maintains a ring buffer (default 1000 entries) as a `StateFlow`, and `DebuggableLogViewer` is a Compose Multiplatform composable that renders it with built-in substring filtering and auto-scroll. Currently ships for `jvm` + `androidTarget` — other KMP targets are follow-ups.
 
-### 5. Configuration
+### 6. Configuration
 
 The Gradle plugin exposes per-feature toggles and a compile-time default logger so individual aspects can be disabled or redirected without runtime setup.
 
@@ -193,7 +215,7 @@ debuggable {
 
 When `enabled = false`, the plugin is a complete no-op — no IR transformations, no runtime dependency surfaces in the output binary. When `observeFlow` or `logAction` is individually disabled, only that transformation is skipped.
 
-### 6. Internal Mechanism
+### 7. Internal Mechanism
 
 A high-level view of what the plugin injects into your classes at compile time. You don't need to know any of this to use `@Debuggable`, but it helps when something behaves unexpectedly.
 
@@ -226,7 +248,7 @@ When `enabled.set(false)` is configured on the Gradle plugin side (the default f
 
 ---
 
-### 7. Release Builds & Privacy
+### 8. Release Builds & Privacy
 
 > **⚠️ Important:** With default settings, `@Debuggable` logs the current value of every tracked `State` / `Flow` and the full argument list of every annotated action — using each value's `toString()`. That can include tokens, passwords, email addresses, and other personal data. **Do not ship production builds with Debuggable enabled unless you understand this trade-off.**
 
