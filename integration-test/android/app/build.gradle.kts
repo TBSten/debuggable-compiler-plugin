@@ -39,9 +39,13 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // Versions (coroutines pinned at 1.9.0, Debuggable runtime) live in
     // `integration-test/gradle/libs.versions.toml`.
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.debuggable.runtime)
+
+    testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }

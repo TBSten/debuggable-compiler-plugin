@@ -30,4 +30,6 @@ androidx-compose-ui                  = { module = "androidx.compose.ui:ui",     
 androidx-compose-foundation          = { module = "androidx.compose.foundation:foundation",         version.ref = "androidx-compose" }
 androidx-compose-material3           = { module = "androidx.compose.material3:material3",           version.ref = "androidx-compose-material3" }
 androidx-lifecycle-runtime-ktx       = { module = "androidx.lifecycle:lifecycle-runtime-ktx",       version.ref = "androidx-lifecycle" }
-androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel         = { module = "androidx.lifecycle:lifecycle-viewmodel",          version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose",  version.ref = "androidx-lifecycle" }
+kotlinx-coroutines-test              = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test",   version.ref = "kotlinx-coroutines" }
