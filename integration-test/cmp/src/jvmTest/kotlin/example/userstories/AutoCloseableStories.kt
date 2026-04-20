@@ -25,6 +25,11 @@ class AutoCloseableStories : UserStoryTestBase() {
 
     @Test fun `logAction fires on method call`() {
         holder = SampleStateHolder()
+        // Wait for the initial StateFlow emission from debuggableFlow coroutine
+        // (which runs on Dispatchers.Default) to settle, then clear so only the
+        // explicit updateStatus() call below is visible in the logger.
+        Thread.sleep(50)
+        logger.clear()
         holder.updateStatus("active")
         assertTrue(logger.messages.any { "updateStatus" in it },
             "method call must be logged, got: ${logger.messages}")

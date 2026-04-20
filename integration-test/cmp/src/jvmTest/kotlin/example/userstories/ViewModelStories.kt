@@ -31,6 +31,11 @@ class ViewModelStories : UserStoryTestBase() {
 
     @Test fun `logAction fires on method call with arguments`() {
         val vm = SampleViewModel()
+        // Wait for the initial StateFlow emissions from debuggableFlow coroutines
+        // (which run on Dispatchers.Default) to settle, then clear so only the
+        // explicit sendMessage() call below is visible in the logger.
+        Thread.sleep(50)
+        logger.clear()
         vm.sendMessage("hi")
         assertTrue(logger.messages.any { "sendMessage" in it },
             "method call must be logged, got: ${logger.messages}")
