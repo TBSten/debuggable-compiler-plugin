@@ -69,3 +69,21 @@ For now, the `DebuggableFirAdditionalCheckersExtension` exists as plumbing
 checkers. That empty shell stays in place so a future FIR migration doesn't
 need to re-wire extension registration — it only needs to populate
 `declarationCheckers`.
+
+## Message format and localization
+
+All compile-time diagnostic strings emitted today go through
+`MessageCollector.report(CompilerMessageSeverity.XXX, "...")` with
+hardcoded English literals (see `DebuggableClassTransformer`, `LoggerResolver`,
+`RegistryInjector` under each `compat/kXX/` module). Severity selection
+(`ERROR` vs `WARNING`) is consistent across compat modules, but there is no
+`KtDiagnosticFactory` indirection and therefore no localisation layer.
+
+Localisation is intentionally deferred. The plugin's audience is Kotlin
+library/app authors who already consume English compiler output, and the
+cross-compat-module overhead of maintaining a message bundle + IDE-side
+renderer map is not justified until the diagnostics move to the FIR phase
+(see the "When to revisit" list above). If a future FIR migration happens,
+that is the natural moment to introduce `KtDiagnosticFactory0/1/2` +
+`KtDiagnosticFactoryToRendererMap` and split messages into a `.properties`
+resource bundle.
