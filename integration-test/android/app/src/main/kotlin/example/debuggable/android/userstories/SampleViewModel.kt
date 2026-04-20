@@ -12,7 +12,9 @@ import me.tbsten.debuggable.runtime.logging.DebugLogger
 object SampleViewModelLogger : DebugLogger {
     private val _messages = mutableListOf<String>()
     val messages: List<String> get() = _messages.toList()
-    override fun log(message: String) { _messages.add(message) }
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
+        _messages.add(if (value === DebugLogger.NoValue) propertyName else "$propertyName: $value")
+    }
     fun clear() { _messages.clear() }
 }
 
