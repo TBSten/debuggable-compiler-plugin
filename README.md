@@ -10,10 +10,6 @@ The compiler takes care of the tedious work of instrumenting logs and preventing
 
 ### 1. Installation
 
-Apply the plugin in your module's `build.gradle.kts`. The runtime library is added automatically — no extra `implementation(...)` line needed.
-
-**Kotlin/JVM, Android, KMP (JVM target)**
-
 ```kotlin
 plugins {
     kotlin("jvm") // or kotlin("android"), kotlin("multiplatform")
@@ -21,35 +17,24 @@ plugins {
 }
 ```
 
-**Kotlin Multiplatform (common source set)**
-
-```kotlin
-plugins {
-    kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.2.0"
-}
-```
-
-The runtime ships for `jvm`, `androidTarget`, `js`, `wasmJs`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`, `linuxX64`, and `mingwX64`.
-
-On Android, logs go to Logcat with tag `"Debuggable"` by default (via `AndroidLogcatLogger`). Everywhere else, they go to stdout with a `[Debuggable]` prefix. See [§5 Replacing the Logger](#5-replacing-the-logger) to redirect.
-
 ### 2. Basic Usage
-Simply annotate a class with `@Debuggable`, and the `State` and `Flow` within it will be tracked automatically.
+
+Annotate a class with `@Debuggable` and every `State`, `Flow`, and `var` inside it is automatically tracked and logged.
 
 ```kotlin
 @Debuggable
 class SearchViewModel : ViewModel() {
-    // Value changes are automatically logged, and observation is released when the ViewModel is cleared
+    // value changes are logged automatically
     val searchQuery = MutableStateFlow("")
-    val uiState = mutableStateOf(UiState())
+    val uiState by mutableStateOf(UiState())
+    var count = 0
 
-    // Function calls (actions) are also automatically recorded along with their arguments
+    // function calls (actions) are also logged with their arguments
     fun onSearchClicked(query: String) { ... }
 }
 ```
 
-Plain `var` properties that are **not** `Flow` / `State` are also tracked by default — the plugin rewrites the setter to log every assignment. Use `@IgnoreDebuggable` to opt a specific property out:
+Use `@IgnoreDebuggable` to exclude a property, or `@FocusDebuggable` to switch the class into **focus mode** where only annotated members are tracked:
 
 ```kotlin
 @Debuggable(isSingleton = true)
@@ -60,6 +45,14 @@ object UserForm {
 }
 // UserForm.name = "daisy"   → "[Debuggable] name: daisy"
 // UserForm.age  = 30        → "[Debuggable] age: 30"
+
+@Debuggable(isSingleton = true)
+object UserForm2 {
+    var name: String = ""   // excluded (focus mode active)
+    var age: Int = 0        // excluded
+    @FocusDebuggable var debugTarget: String = ""  // tracked
+}
+// UserForm2.debugTarget = "new value" → "[Debuggable] debugTarget: new value"
 ```
 
 ### 3. Diagram Logging (Power-Assert Style)
