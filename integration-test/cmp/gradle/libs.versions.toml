@@ -14,7 +14,13 @@ debuggable = "0.1.7"
 # metadata compatibility story.
 kotlinx-coroutines = "1.9.0"
 
+# lifecycle-viewmodel KMP support was added in 2.8.0; 2.8.7 is the version
+# that ships a JVM artifact so jvmTest can instantiate ViewModel directly.
+androidx-lifecycle = "2.8.7"
+
 [libraries]
 
-debuggable-runtime       = { module = "me.tbsten.debuggablecompilerplugin:debuggable-runtime", version.ref = "debuggable" }
-kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing",        version.ref = "kotlinx-coroutines" }
+debuggable-runtime            = { module = "me.tbsten.debuggablecompilerplugin:debuggable-runtime", version.ref = "debuggable" }
+kotlinx-coroutines-swing      = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing",        version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test       = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test",         version.ref = "kotlinx-coroutines" }
+androidx-lifecycle-viewmodel  = { module = "androidx.lifecycle:lifecycle-viewmodel",                 version.ref = "androidx-lifecycle" }

@@ -25,6 +25,13 @@ kotlin {
                 // for the metadata-compatibility rationale behind the coroutines pin.
                 implementation(libs.kotlinx.coroutines.swing)
                 implementation(libs.debuggable.runtime)
+                implementation(libs.androidx.lifecycle.viewmodel)
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }
