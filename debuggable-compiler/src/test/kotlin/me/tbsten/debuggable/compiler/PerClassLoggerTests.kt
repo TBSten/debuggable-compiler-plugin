@@ -20,8 +20,8 @@ class PerClassLoggerTests : CompilerTestBase() {
             import me.tbsten.debuggable.runtime.logging.DebugLogger
 
             object AuthLogger : DebugLogger {
-                override fun log(message: String) {
-                    println("[Auth] " + message)
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("[Auth] " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
                 }
             }
 
@@ -46,8 +46,8 @@ class PerClassLoggerTests : CompilerTestBase() {
             import kotlinx.coroutines.flow.MutableStateFlow
 
             object AuthLogger : DebugLogger {
-                override fun log(message: String) {
-                    println("[Auth] " + message)
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("[Auth] " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
                 }
             }
 
@@ -78,7 +78,7 @@ class PerClassLoggerTests : CompilerTestBase() {
             }
         """.trimIndent())
         val captured = mutableListOf<String>()
-        DefaultDebugLogger.current = DebugLogger { captured += it }
+        DefaultDebugLogger.current = DebugLogger { _, name, v -> captured += if (v == null) name else "$name: $v" }
         try {
             val obj = result.getObject("DefaultStore")
             obj.call("doWork")
@@ -90,8 +90,6 @@ class PerClassLoggerTests : CompilerTestBase() {
     }
 
     @Test fun `per-class logger and default logger can coexist`() {
-        // Two objects: one with AuthLogger, one without.
-        // The one without should go through DefaultDebugLogger; the one with should bypass it.
         val result = compile(
             // language=kotlin
             """
@@ -99,8 +97,8 @@ class PerClassLoggerTests : CompilerTestBase() {
             import me.tbsten.debuggable.runtime.logging.DebugLogger
 
             object AuthLogger : DebugLogger {
-                override fun log(message: String) {
-                    println("[Auth] " + message)
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("[Auth] " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
                 }
             }
 
@@ -115,7 +113,7 @@ class PerClassLoggerTests : CompilerTestBase() {
             }
         """.trimIndent())
         val defaultCaptured = mutableListOf<String>()
-        DefaultDebugLogger.current = DebugLogger { defaultCaptured += it }
+        DefaultDebugLogger.current = DebugLogger { _, name, v -> defaultCaptured += if (v == null) name else "$name: $v" }
         try {
             val auth = result.getObject("AuthStore")
             val plain = result.getObject("PlainStore")

@@ -43,7 +43,8 @@ class FileLogger(
         if (!append) file.writeText("")
     }
 
-    override fun log(message: String) {
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
+        val message = if (value === DebugLogger.NoValue) propertyName else "$propertyName: $value"
         synchronized(lock) {
             try {
                 file.appendText("$message\n", Charsets.UTF_8)

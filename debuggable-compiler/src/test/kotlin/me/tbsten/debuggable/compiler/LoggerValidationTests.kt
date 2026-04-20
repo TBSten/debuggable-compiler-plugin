@@ -15,7 +15,7 @@ class LoggerValidationTests : CompilerTestBase() {
         import me.tbsten.debuggable.runtime.annotations.Debuggable
         import me.tbsten.debuggable.runtime.logging.DebugLogger
         class NotAnObjectLogger : DebugLogger {
-            override fun log(message: String) {}
+            override fun log(receiver: Any?, propertyName: String, value: Any?) {}
         }
         @Debuggable(isSingleton = true, logger = NotAnObjectLogger::class)
         object Store { fun work() {} }
@@ -42,7 +42,7 @@ class LoggerValidationTests : CompilerTestBase() {
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import me.tbsten.debuggable.runtime.logging.DebugLogger
             object ValidLogger : DebugLogger {
-                override fun log(message: String) {}
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {}
             }
             @Debuggable(isSingleton = true, logger = ValidLogger::class)
             object Store { fun work() {} }

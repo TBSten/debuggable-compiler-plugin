@@ -9,7 +9,29 @@ package me.tbsten.debuggable.runtime.logging
  * redirect all `@Debuggable` logs globally.
  */
 fun interface DebugLogger {
-    fun log(message: String)
+    /**
+     * Called on every observable event.
+     *
+     * @param receiver The object on which the property lives, or `null` when
+     *   the context is not available (e.g. singleton objects, function calls).
+     * @param propertyName Property name, function call expression, or any other
+     *   label that identifies what changed.
+     * @param value The new value for property mutations. Pass [NoValue] (not
+     *   `null`) to signal that there is no associated value — used for function
+     *   call logs and diagram logs. `null` is a legitimate property value and
+     *   must not be confused with the absence of a value.
+     */
+    fun log(receiver: Any?, propertyName: String, value: Any?)
+
+    /**
+     * Sentinel that means "this log event has no associated value".
+     *
+     * Callers like [logAction] and [logDiagram] pass [NoValue] instead of
+     * `null` so that logger implementations can distinguish between:
+     * - a property set to `null` → `log(null, "field", null)`
+     * - a function call with no value → `log(null, "action()", NoValue)`
+     */
+    object NoValue
 
     /**
      * Default implementation that prints to stdout with a `[Debuggable]` prefix.
@@ -20,8 +42,9 @@ fun interface DebugLogger {
      * explicitly rather than relying on the platform default.
      */
     object Stdout : DebugLogger {
-        override fun log(message: String) {
-            println("[Debuggable] $message")
+        override fun log(receiver: Any?, propertyName: String, value: Any?) {
+            if (value === NoValue) println("[Debuggable] $propertyName")
+            else println("[Debuggable] $propertyName: $value")
         }
     }
 }

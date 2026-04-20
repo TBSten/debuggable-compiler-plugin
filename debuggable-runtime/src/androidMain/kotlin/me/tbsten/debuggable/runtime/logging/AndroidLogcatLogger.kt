@@ -20,12 +20,13 @@ import android.util.Log
  * Use the constructor to pass a custom tag.
  */
 open class AndroidLogcatLogger(private val tag: String) : DebugLogger {
-    override fun log(message: String) {
-        Log.d(tag, message)
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
+        Log.d(tag, if (value === DebugLogger.NoValue) propertyName else "$propertyName: $value")
     }
 
     companion object : DebugLogger {
         private val default = AndroidLogcatLogger("Debuggable")
-        override fun log(message: String) = default.log(message)
+        override fun log(receiver: Any?, propertyName: String, value: Any?) =
+            default.log(receiver, propertyName, value)
     }
 }

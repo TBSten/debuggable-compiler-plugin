@@ -34,6 +34,6 @@ fun <T> debuggableSet(
     value: T,
     logger: DebugLogger = DefaultDebugLogger,
 ): T {
-    logger.log("$name: $value")
+    logger.log(null, name, value)
     return value
 }

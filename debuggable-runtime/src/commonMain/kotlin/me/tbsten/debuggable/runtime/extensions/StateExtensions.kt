@@ -25,7 +25,7 @@ fun <T> State<T>.debuggableState(
     logger: DebugLogger = DefaultDebugLogger,
 ): State<T> {
     snapshotFlow { value }
-        .onEach { logger.log("$name: $it") }
+        .onEach { logger.log(null, name, it) }
         .launchIn(registry.coroutineScope)
     return this
 }

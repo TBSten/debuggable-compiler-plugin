@@ -22,11 +22,11 @@ class CompositeLogger(private val loggers: List<DebugLogger>) : DebugLogger {
 
     constructor(vararg loggers: DebugLogger) : this(loggers.toList())
 
-    override fun log(message: String) {
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
         var firstThrown: Throwable? = null
         for (logger in loggers) {
             try {
-                logger.log(message)
+                logger.log(receiver, propertyName, value)
             } catch (t: Throwable) {
                 if (firstThrown == null) firstThrown = t else firstThrown.addSuppressed(t)
             }

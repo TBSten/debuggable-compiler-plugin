@@ -242,7 +242,9 @@ class UserStoryTests : CompilerTestBase() {
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             import me.tbsten.debuggable.runtime.logging.DebugLogger
             object AuthLogger : DebugLogger {
-                override fun log(message: String) { println("AUTH: ${'$'}message") }
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("AUTH: " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
+                }
             }
             @Debuggable(logger = AuthLogger::class)
             class AuthViewModel : AutoCloseable {

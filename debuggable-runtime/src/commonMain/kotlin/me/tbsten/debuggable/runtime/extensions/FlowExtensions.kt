@@ -26,7 +26,7 @@ fun <T> Flow<T>.debuggableFlow(
     registry: DebugCleanupRegistry = DebugCleanupRegistry.Default,
     logger: DebugLogger = DefaultDebugLogger,
 ): Flow<T> {
-    onEach { logger.log("$name: $it") }
+    onEach { logger.log(null, name, it) }
         .launchIn(registry.coroutineScope)
     return this
 }

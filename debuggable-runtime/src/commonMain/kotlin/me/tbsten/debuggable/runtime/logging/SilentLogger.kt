@@ -11,7 +11,7 @@ package me.tbsten.debuggable.runtime.logging
  * ```
  */
 object SilentLogger : DebugLogger {
-    override fun log(message: String) {
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
         // Intentionally empty.
     }
 }

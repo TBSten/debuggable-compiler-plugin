@@ -11,7 +11,7 @@ import kotlin.concurrent.Volatile
  * class MyApp : Application() {
  *     override fun onCreate() {
  *         super.onCreate()
- *         DefaultDebugLogger.current = DebugLogger { Log.d("Debuggable", it) }
+ *         DefaultDebugLogger.current = DebugLogger { _, name, v -> Log.d("Debuggable", if (v == null) name else "$name: $v") }
  *     }
  *     }
  * ```
@@ -38,5 +38,6 @@ object DefaultDebugLogger : DebugLogger {
             _current = value
         }
 
-    override fun log(message: String) = _current.log(message)
+    override fun log(receiver: Any?, propertyName: String, value: Any?) =
+        _current.log(receiver, propertyName, value)
 }

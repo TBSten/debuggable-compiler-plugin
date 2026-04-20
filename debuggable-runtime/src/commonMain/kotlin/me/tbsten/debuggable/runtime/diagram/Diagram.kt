@@ -39,7 +39,7 @@ fun logDiagram(
     vararg captures: DiagramCapture,
     logger: DebugLogger = DefaultDebugLogger,
 ) {
-    logger.log(buildDiagramString(functionName, argExpr, *captures))
+    logger.log(null, buildDiagramString(functionName, argExpr, *captures), DebugLogger.NoValue)
 }
 
 private fun valueToString(value: Any?): String = try {

@@ -25,8 +25,8 @@ package me.tbsten.debuggable.runtime.logging
 class InMemoryLogger : DebugLogger {
     private val _messages = mutableListOf<String>()
 
-    override fun log(message: String) {
-        _messages.add(message)
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
+        _messages.add(if (value === DebugLogger.NoValue) propertyName else "$propertyName: $value")
     }
 
     /** A stable snapshot of the captured messages at call time. */

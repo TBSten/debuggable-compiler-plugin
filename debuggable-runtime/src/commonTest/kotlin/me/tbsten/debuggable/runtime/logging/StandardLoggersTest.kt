@@ -6,44 +6,44 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+private fun format(name: String, v: Any?) =
+    if (v === DebugLogger.NoValue) name else "$name: $v"
+
 class StandardLoggersTest {
 
     @Test
     fun `SilentLogger discards every message`() {
-        // Simply verify it does not throw and produces no observable side effect.
-        SilentLogger.log("anything")
-        SilentLogger.log("")
-        SilentLogger.log("\n")
+        SilentLogger.log(null, "anything", DebugLogger.NoValue)
+        SilentLogger.log(null, "label", null)
+        SilentLogger.log(null, "count", 42)
     }
 
     @Test
     fun `PrefixedLogger forwards with prefix to delegate`() {
         val captured = mutableListOf<String>()
-        val delegate = DebugLogger { captured += it }
+        val delegate = DebugLogger { _, name, v -> captured += format(name, v) }
         val logger = PrefixedLogger("[MyApp]", delegate)
 
-        logger.log("hello")
-        logger.log("world")
+        logger.log(null, "hello", DebugLogger.NoValue)
+        logger.log(null, "count", 42)
 
-        assertEquals(listOf("[MyApp] hello", "[MyApp] world"), captured)
+        assertEquals(listOf("[MyApp] hello", "[MyApp] count: 42"), captured)
     }
 
     @Test
     fun `PrefixedLogger defaults to Stdout delegate`() {
-        // Just exercise the default constructor argument.
         val logger = PrefixedLogger("[X]")
-        // Cannot capture println() without System.setOut, so we simply ensure it doesn't throw.
-        logger.log("no crash expected")
+        logger.log(null, "no crash expected", DebugLogger.NoValue)
     }
 
     @Test
     fun `PrefixedLogger can be chained`() {
         val captured = mutableListOf<String>()
-        val sink = DebugLogger { captured += it }
+        val sink = DebugLogger { _, name, v -> captured += format(name, v) }
         val inner = PrefixedLogger("[inner]", sink)
         val outer = PrefixedLogger("[outer]", inner)
 
-        outer.log("message")
+        outer.log(null, "message", DebugLogger.NoValue)
 
         assertEquals(listOf("[inner] [outer] message"), captured)
     }
@@ -53,9 +53,8 @@ class StandardLoggersTest {
         val original = DefaultDebugLogger.current
         DefaultDebugLogger.current = SilentLogger
         try {
-            DefaultDebugLogger.log("should be dropped")
+            DefaultDebugLogger.log(null, "should be dropped", DebugLogger.NoValue)
             logAction("action", "arg")
-            // No assertion required — just ensure no side effects leak.
             assertTrue(true)
         } finally {
             DefaultDebugLogger.current = original
@@ -65,18 +64,39 @@ class StandardLoggersTest {
     @Test
     fun `InMemoryLogger captures messages in order`() {
         val logger = InMemoryLogger()
-        logger.log("first")
-        logger.log("second")
-        logger.log("third")
+        logger.log(null, "first", DebugLogger.NoValue)
+        logger.log(null, "second", DebugLogger.NoValue)
+        logger.log(null, "third", DebugLogger.NoValue)
         assertEquals(listOf("first", "second", "third"), logger.messages)
+    }
+
+    @Test
+    fun `InMemoryLogger formats property and value`() {
+        val logger = InMemoryLogger()
+        logger.log(null, "count", 42)
+        assertEquals(listOf("count: 42"), logger.messages)
+    }
+
+    @Test
+    fun `InMemoryLogger formats null value as null string`() {
+        val logger = InMemoryLogger()
+        logger.log(null, "label", null)
+        assertEquals(listOf("label: null"), logger.messages)
+    }
+
+    @Test
+    fun `InMemoryLogger omits value for NoValue sentinel`() {
+        val logger = InMemoryLogger()
+        logger.log(null, "action()", DebugLogger.NoValue)
+        assertEquals(listOf("action()"), logger.messages)
     }
 
     @Test
     fun `InMemoryLogger snapshot is independent of future writes`() {
         val logger = InMemoryLogger()
-        logger.log("a")
+        logger.log(null, "a", DebugLogger.NoValue)
         val snap = logger.snapshot()
-        logger.log("b")
+        logger.log(null, "b", DebugLogger.NoValue)
         assertEquals(listOf("a"), snap)
         assertEquals(listOf("a", "b"), logger.messages)
     }
@@ -84,11 +104,11 @@ class StandardLoggersTest {
     @Test
     fun `InMemoryLogger clear resets state`() {
         val logger = InMemoryLogger()
-        logger.log("x")
-        logger.log("y")
+        logger.log(null, "x", DebugLogger.NoValue)
+        logger.log(null, "y", DebugLogger.NoValue)
         logger.clear()
         assertTrue(logger.messages.isEmpty())
-        logger.log("z")
+        logger.log(null, "z", DebugLogger.NoValue)
         assertEquals(listOf("z"), logger.messages)
     }
 
@@ -98,18 +118,17 @@ class StandardLoggersTest {
         val b = InMemoryLogger()
         val composite = CompositeLogger(a, b)
 
-        composite.log("hello")
-        composite.log("world")
+        composite.log(null, "hello", DebugLogger.NoValue)
+        composite.log(null, "count", 42)
 
-        assertEquals(listOf("hello", "world"), a.messages)
-        assertEquals(listOf("hello", "world"), b.messages)
+        assertEquals(listOf("hello", "count: 42"), a.messages)
+        assertEquals(listOf("hello", "count: 42"), b.messages)
     }
 
     @Test
     fun `CompositeLogger with empty list is a no-op`() {
         val logger = CompositeLogger(emptyList())
-        logger.log("anything")
-        // should not throw
+        logger.log(null, "anything", DebugLogger.NoValue)
         assertTrue(true)
     }
 
@@ -117,13 +136,12 @@ class StandardLoggersTest {
     fun `CompositeLogger visits remaining delegates when one throws`() {
         val captured = InMemoryLogger()
         val composite = CompositeLogger(
-            DebugLogger { error("boom") },
+            DebugLogger { _, _, _ -> error("boom") },
             captured,
         )
 
-        val thrown = runCatching { composite.log("x") }.exceptionOrNull()
+        val thrown = runCatching { composite.log(null, "x", DebugLogger.NoValue) }.exceptionOrNull()
         assertTrue(thrown != null, "expected rethrown exception")
-        // Delegates after the throwing one still received the message.
         assertEquals(listOf("x"), captured.messages)
     }
 }

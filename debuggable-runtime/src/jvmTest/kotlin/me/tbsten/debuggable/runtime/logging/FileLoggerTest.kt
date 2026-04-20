@@ -17,11 +17,19 @@ class FileLoggerTest {
     fun `appends each message as a line`() {
         val file = tempFile()
         val logger = FileLogger(file)
-        logger.log("alpha")
-        logger.log("beta")
+        logger.log(null, "alpha", DebugLogger.NoValue)
+        logger.log(null, "count", 42)
 
         val lines = file.readLines()
-        assertEquals(listOf("alpha", "beta"), lines)
+        assertEquals(listOf("alpha", "count: 42"), lines)
+    }
+
+    @Test
+    fun `null property value is written as null string`() {
+        val file = tempFile()
+        val logger = FileLogger(file)
+        logger.log(null, "label", null)
+        assertEquals(listOf("label: null"), file.readLines())
     }
 
     @Test
@@ -29,7 +37,7 @@ class FileLoggerTest {
         val file = tempFile()
         file.writeText("prior\n")
         val logger = FileLogger(file, append = true)
-        logger.log("new")
+        logger.log(null, "new", DebugLogger.NoValue)
 
         assertEquals(listOf("prior", "new"), file.readLines())
     }
@@ -39,7 +47,7 @@ class FileLoggerTest {
         val file = tempFile()
         file.writeText("prior\n")
         val logger = FileLogger(file, append = false)
-        logger.log("fresh")
+        logger.log(null, "fresh", DebugLogger.NoValue)
 
         assertEquals(listOf("fresh"), file.readLines())
     }
@@ -50,7 +58,7 @@ class FileLoggerTest {
         val file = java.io.File(tmp.toFile(), "nested/dir/out.log")
         assertTrue(!file.parentFile.exists(), "precondition: parent does not exist yet")
         val logger = FileLogger(file)
-        logger.log("created")
+        logger.log(null, "created", DebugLogger.NoValue)
         assertTrue(file.exists())
         assertEquals(listOf("created"), file.readLines())
     }
@@ -63,7 +71,7 @@ class FileLoggerTest {
         val threads = (0 until 4).map { threadId ->
             Thread {
                 repeat(total) { i ->
-                    logger.log("t$threadId-$i")
+                    logger.log(null, "t$threadId-$i", DebugLogger.NoValue)
                 }
             }.also { it.start() }
         }
@@ -71,7 +79,6 @@ class FileLoggerTest {
 
         val lines = file.readLines()
         assertEquals(4 * total, lines.size)
-        // Every line must be one of the expected patterns — no partial lines.
         val pattern = Regex("""^t\d+-\d+$""")
         assertTrue(lines.all { pattern.matches(it) }, "unexpected line shape in output")
     }

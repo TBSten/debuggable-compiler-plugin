@@ -15,7 +15,7 @@ class PrefixedLogger(
     private val prefix: String,
     private val delegate: DebugLogger = DebugLogger.Stdout,
 ) : DebugLogger {
-    override fun log(message: String) {
-        delegate.log("$prefix $message")
+    override fun log(receiver: Any?, propertyName: String, value: Any?) {
+        delegate.log(receiver, "$prefix $propertyName", value)
     }
 }

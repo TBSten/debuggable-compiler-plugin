@@ -16,6 +16,6 @@ fun logAction(name: String, vararg args: Any?, logger: DebugLogger = DefaultDebu
             "<toString threw ${t::class.simpleName ?: "Throwable"}>"
         }
     }
-    val message = if (stackTrace.isEmpty()) "$name($formatted)" else "$name($formatted)\n$stackTrace"
-    logger.log(message)
+    val label = if (stackTrace.isEmpty()) "$name($formatted)" else "$name($formatted)\n$stackTrace"
+    logger.log(null, label, DebugLogger.NoValue)
 }

@@ -22,8 +22,8 @@ class GradleDefaultLoggerTests : CompilerTestBase() {
             import me.tbsten.debuggable.runtime.logging.DebugLogger
 
             object GlobalLogger : DebugLogger {
-                override fun log(message: String) {
-                    println("[Global] " + message)
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("[Global] " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
                 }
             }
 
@@ -51,14 +51,14 @@ class GradleDefaultLoggerTests : CompilerTestBase() {
             import me.tbsten.debuggable.runtime.logging.DebugLogger
 
             object GlobalLogger : DebugLogger {
-                override fun log(message: String) {
-                    println("[Global] " + message)
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("[Global] " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
                 }
             }
 
             object AuthLogger : DebugLogger {
-                override fun log(message: String) {
-                    println("[Auth] " + message)
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("[Auth] " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
                 }
             }
 
@@ -85,8 +85,8 @@ class GradleDefaultLoggerTests : CompilerTestBase() {
             import kotlinx.coroutines.flow.MutableStateFlow
 
             object GlobalLogger : DebugLogger {
-                override fun log(message: String) {
-                    println("[Global] " + message)
+                override fun log(receiver: Any?, propertyName: String, value: Any?) {
+                    println("[Global] " + if (value == null) propertyName else "${'$'}propertyName: ${'$'}value")
                 }
             }
 
@@ -107,7 +107,6 @@ class GradleDefaultLoggerTests : CompilerTestBase() {
     }
 
     @Test fun `empty defaultLogger falls back to DefaultDebugLogger (legacy behaviour)`() {
-        // No defaultLogger specified → existing DefaultDebugLogger fallback still works.
         val result = compile(
             // language=kotlin
             """
@@ -126,8 +125,6 @@ class GradleDefaultLoggerTests : CompilerTestBase() {
             import me.tbsten.debuggable.runtime.annotations.Debuggable
             @Debuggable(isSingleton = true) object Store { fun work() {} }
         """.trimIndent(), defaultLogger = "com.example.DoesNotExist")
-        // Compilation still succeeds because the IR safety-net is a soft ERROR report, but
-        // the message collector should carry the diagnostic.
         assertTrue(
             result.messages.contains("could not be resolved"),
             "Expected unresolved-FQN error message, got:\n${result.messages}",
