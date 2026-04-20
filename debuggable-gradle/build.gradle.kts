@@ -41,6 +41,7 @@ buildConfig {
     // the consumer's implementation configuration.
     buildConfigField("String", "COMPILER_ARTIFACT_GROUP_ID", "\"${rootProject.group}\"")
     buildConfigField("String", "COMPILER_ARTIFACT_ID", "\"debuggable-compiler\"")
+    buildConfigField("String", "RUNTIME_ARTIFACT_ID", "\"debuggable-runtime\"")
     buildConfigField("String", "COMPILER_ARTIFACT_VERSION", "\"$debuggableVersion\"")
 }
 

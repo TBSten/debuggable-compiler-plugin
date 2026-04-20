@@ -44,7 +44,7 @@ dependencies {
     // Versions (coroutines pinned at 1.9.0, Debuggable runtime) live in
     // `integration-test/gradle/libs.versions.toml`.
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.debuggable.runtime)
+    // debuggable-runtime is added automatically by the Debuggable Gradle plugin.
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)

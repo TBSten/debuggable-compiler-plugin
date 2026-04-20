@@ -24,7 +24,7 @@ kotlin {
                 // `integration-test/gradle/libs.versions.toml`; see that file's header
                 // for the metadata-compatibility rationale behind the coroutines pin.
                 implementation(libs.kotlinx.coroutines.swing)
-                implementation(libs.debuggable.runtime)
+                // debuggable-runtime is added automatically by the Debuggable Gradle plugin.
                 implementation(libs.androidx.lifecycle.viewmodel)
             }
         }

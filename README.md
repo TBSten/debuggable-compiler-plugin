@@ -30,18 +30,14 @@ dependencyResolutionManagement {
 }
 ```
 
-Then apply the plugin and add the runtime dependency in your module's `build.gradle.kts`:
+Apply the plugin in your module's `build.gradle.kts`. The runtime library is added automatically — no extra `implementation(...)` line needed.
 
 **Kotlin/JVM, Android, KMP (JVM target)**
 
 ```kotlin
 plugins {
     kotlin("jvm") // or kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.7"
-}
-
-dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.7")
+    id("me.tbsten.debuggablecompilerplugin") version "0.2.0"
 }
 ```
 
@@ -50,15 +46,7 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.7"
-}
-
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.7")
-        }
-    }
+    id("me.tbsten.debuggablecompilerplugin") version "0.2.0"
 }
 ```
 
@@ -182,7 +170,7 @@ class MyApp : Application() {
 **In-app log viewer** (optional module `debuggable-ui`):
 
 ```kotlin
-implementation("me.tbsten.debuggablecompilerplugin:debuggable-ui:0.1.7")
+implementation("me.tbsten.debuggablecompilerplugin:debuggable-ui:0.2.0")
 ```
 
 ```kotlin
@@ -348,7 +336,7 @@ From the repo root:
 ./gradlew publishToMavenLocal
 ```
 
-This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.1.7`) into `~/.m2/`.
+This installs `debuggable-runtime`, `debuggable-compiler`, and `debuggable-gradle` (version `0.2.0`) into `~/.m2/`.
 
 ### 2. Pick a sample
 

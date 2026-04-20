@@ -10,38 +10,12 @@
 
 ### 1. インストール
 
-Maven Central で配布しています。必要なのは 2 つ: Gradle プラグイン (コンパイラプラグインを自動で適用) と runtime ライブラリ (注入されたコードの呼び出し先)。
-
-まず `mavenCentral()` をプラグイン解決・依存解決の両方に追加:
-
-```kotlin
-// settings.gradle.kts
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        google() // Android の場合のみ
-    }
-}
-```
-
-モジュールの `build.gradle.kts` でプラグインを適用し、runtime を依存に追加:
-
 **Kotlin/JVM, Android, KMP (JVM ターゲット)**
 
 ```kotlin
 plugins {
     kotlin("jvm") // もしくは kotlin("android"), kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.7"
-}
-
-dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.7")
+    id("me.tbsten.debuggablecompilerplugin") version "0.2.0"
 }
 ```
 
@@ -50,15 +24,7 @@ dependencies {
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.1.7"
-}
-
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.7")
-        }
-    }
+    id("me.tbsten.debuggablecompilerplugin") version "0.2.0"
 }
 ```
 
@@ -183,7 +149,7 @@ class MyApp : Application() {
 **アプリ内ログビューア** (オプションモジュール `debuggable-ui`):
 
 ```kotlin
-implementation("me.tbsten.debuggablecompilerplugin:debuggable-ui:0.1.7")
+implementation("me.tbsten.debuggablecompilerplugin:debuggable-ui:0.2.0")
 ```
 
 ```kotlin
@@ -348,7 +314,7 @@ class ComplexViewModel : ViewModel() {
 ./gradlew publishToMavenLocal
 ```
 
-これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.1.7`) が `~/.m2/` にインストールされます。
+これで `debuggable-runtime` / `debuggable-compiler` / `debuggable-gradle` (version `0.2.0`) が `~/.m2/` にインストールされます。
 
 ### 2. サンプルを選ぶ
 

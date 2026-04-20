@@ -12,12 +12,12 @@ class DebuggableGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project) {
         target.extensions.create("debuggable", DebuggableExtension::class.java)
 
-        // Fail-fast guardrail: if no Kotlin plugin is applied by the time the
-        // project is fully configured, `applyToCompilation` is never called and
-        // the user sees a silent no-op. Warn them instead.
         target.afterEvaluate {
             val hasKotlin = KOTLIN_PLUGIN_IDS.any { target.pluginManager.hasPlugin(it) }
             if (!hasKotlin) {
+                // Fail-fast guardrail: if no Kotlin plugin is applied by the time the
+                // project is fully configured, `applyToCompilation` is never called and
+                // the user sees a silent no-op. Warn them instead.
                 target.logger.warn(
                     "[Debuggable] `${target.path}` applies `me.tbsten.debuggablecompilerplugin` " +
                         "but no Kotlin plugin (kotlin-jvm / kotlin-multiplatform / kotlin-android) " +
@@ -25,7 +25,27 @@ class DebuggableGradlePlugin : KotlinCompilerPluginSupportPlugin {
                         "Apply the Debuggable plugin on the same module as the Kotlin plugin — " +
                         "note that applying it only on the root project does NOT propagate to subprojects.",
                 )
+                return@afterEvaluate
             }
+            addRuntimeDependency(target)
+        }
+    }
+
+    private fun addRuntimeDependency(project: Project) {
+        val notation = "${BuildConfig.COMPILER_ARTIFACT_GROUP_ID}:${BuildConfig.RUNTIME_ARTIFACT_ID}:${BuildConfig.COMPILER_ARTIFACT_VERSION}"
+        // KMP projects expose `commonMainImplementation`; JVM/Android projects use `implementation`.
+        val configName = if (project.pluginManager.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
+            "commonMainImplementation"
+        } else {
+            "implementation"
+        }
+        if (project.configurations.findByName(configName) != null) {
+            project.dependencies.add(configName, notation)
+        } else {
+            project.logger.warn(
+                "[Debuggable] Could not auto-add debuggable-runtime: configuration '$configName' not found. " +
+                    "Add it manually: implementation(\"$notation\")",
+            )
         }
     }
 

@@ -45,7 +45,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:$debuggableVersion")
+            // debuggable-runtime is added automatically by the Debuggable Gradle plugin.
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
         }
         commonTest.dependencies {
