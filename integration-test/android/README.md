@@ -85,7 +85,7 @@ plugins {
 }
 
 dependencies {
-    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.0")
+    implementation("me.tbsten.debuggablecompilerplugin:debuggable-runtime:0.1.5")
     // ...
 }
 ```

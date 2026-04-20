@@ -6,7 +6,12 @@ plugins {
     id("me.tbsten.debuggablecompilerplugin")
 }
 
-val debuggableVersion: String = (findProperty("integration.debuggable") as String?) ?: "0.1.5"
+// Canonical default is `debuggable.version` in this sample's `gradle.properties`
+// (kept in sync with the repo root via `/bump-library-version`). The explicit
+// CLI flag `-Pintegration.debuggable=X.Y.Z` still wins.
+val debuggableVersion: String = (findProperty("integration.debuggable") as String?)
+    ?: (findProperty("debuggable.version") as String?)
+    ?: error("debuggable.version missing — set it in gradle.properties or pass -Pintegration.debuggable=…")
 val coroutinesVersion = "1.9.0"
 
 kotlin {
