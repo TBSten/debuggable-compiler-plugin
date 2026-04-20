@@ -3,6 +3,7 @@ package me.tbsten.debuggable.compiler
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 /**
  * `@FocusDebuggable` on a plain `var` property now rewires its setter to log
@@ -116,5 +117,87 @@ class SetterOverrideTests : CompilerTestBase() {
         }
         assertTrue("tracked: 5" in output, "Flow mutation should log, got: $output")
         assertTrue("name: hi" in output, "var mutation should log, got: $output")
+    }
+
+    @Test fun `focus var nullable String is logged including null assignment`() {
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+            @Debuggable(isSingleton = true) object Form {
+                @FocusDebuggable var label: String? = null
+            }
+            """.trimIndent(),
+        )
+        val obj = result.getObject("Form")
+        val setter = obj.javaClass.getDeclaredMethod("setLabel", String::class.java)
+        val output = captureSystemOut {
+            setter.invoke(obj, "hello")
+            setter.invoke(obj, null)
+        }
+        assertTrue("label: hello" in output, "non-null assignment should log, got: $output")
+        assertTrue("label: null" in output, "null assignment should log, got: $output")
+    }
+
+    @Test fun `focus var Boolean is logged on assignment`() {
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+            @Debuggable(isSingleton = true) object Form {
+                @FocusDebuggable var enabled: Boolean = false
+            }
+            """.trimIndent(),
+        )
+        val obj = result.getObject("Form")
+        val setter = obj.javaClass.getDeclaredMethod("setEnabled", Boolean::class.javaPrimitiveType)
+        val output = captureSystemOut { setter.invoke(obj, true) }
+        assertTrue("enabled: true" in output, "boolean assignment should log, got: $output")
+    }
+
+    @Test fun `delegated var (no backing field) is silently skipped`() {
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+            @Debuggable(isSingleton = true) object Form {
+                @FocusDebuggable var counter: Int by object : kotlin.properties.ReadWriteProperty<Any?, Int> {
+                    private var v = 0
+                    override fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>) = v
+                    override fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, value: Int) { v = value }
+                }
+            }
+            """.trimIndent(),
+        )
+        // Compilation should succeed — delegated property is skipped without error.
+        assertEquals(com.tschuchort.compiletesting.KotlinCompilation.ExitCode.OK, result.exitCode,
+            "delegated var should compile cleanly, got: ${result.messages}")
+        val obj = result.getObject("Form")
+        val output = captureSystemOut { obj.call("setCounter", 7) }
+        assertFalse("counter:" in output, "delegated var should not be logged, got: $output")
+    }
+
+    @Test fun `data class with focused var — setter is logged, copy is not`() {
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            import me.tbsten.debuggable.runtime.annotations.FocusDebuggable
+            import java.io.Closeable
+            @Debuggable class UserRecord : Closeable {
+                @FocusDebuggable var name: String = ""
+                override fun close() {}
+            }
+            """.trimIndent(),
+        )
+        assertEquals(com.tschuchort.compiletesting.KotlinCompilation.ExitCode.OK, result.exitCode,
+            "data-class-like record should compile, got: ${result.messages}")
+        val instance = result.getInstance("UserRecord")
+        val setter = instance.javaClass.getDeclaredMethod("setName", String::class.java)
+        val output = captureSystemOut { setter.invoke(instance, "alice") }
+        assertTrue("name: alice" in output, "direct setter should log, got: $output")
     }
 }
