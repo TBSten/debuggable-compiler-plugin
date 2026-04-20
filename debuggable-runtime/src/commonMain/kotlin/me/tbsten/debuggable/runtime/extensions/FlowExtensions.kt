@@ -22,11 +22,12 @@ import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
  */
 @InternalDebuggableApi
 fun <T> Flow<T>.debuggableFlow(
+    receiver: Any?,
     name: String,
     registry: DebugCleanupRegistry = DebugCleanupRegistry.Default,
     logger: DebugLogger = DefaultDebugLogger,
 ): Flow<T> {
-    onEach { logger.log(null, name, it) }
+    onEach { logger.log(receiver, name, it) }
         .launchIn(registry.coroutineScope)
     return this
 }

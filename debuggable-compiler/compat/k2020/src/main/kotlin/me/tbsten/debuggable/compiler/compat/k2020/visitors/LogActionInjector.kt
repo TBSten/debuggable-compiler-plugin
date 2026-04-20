@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
@@ -31,17 +32,21 @@ internal fun injectLogAction(
             builder.irString("")
         }
 
+        val receiverExpr = function.dispatchReceiverParameter?.let { builder.irGet(it) }
+            ?: builder.irNull()
+
         val logCall = builder.irCall(symbolProvider.logActionFunction).apply {
-            putValueArgument(0, builder.irString(function.name.asString()))
+            putValueArgument(0, receiverExpr)
+            putValueArgument(1, builder.irString(function.name.asString()))
             putValueArgument(
-                1,
+                2,
                 builder.irVararg(
                     elementType = pluginContext.irBuiltIns.anyNType,
                     values = function.valueParameters.map { builder.irGet(it) },
                 ),
             )
-            putValueArgument(2, loggerResolver.resolve(owningClass))
-            putValueArgument(3, stackTraceArg)
+            putValueArgument(3, loggerResolver.resolve(owningClass))
+            putValueArgument(4, stackTraceArg)
         }
 
         function.body = builder.irBlockBody {

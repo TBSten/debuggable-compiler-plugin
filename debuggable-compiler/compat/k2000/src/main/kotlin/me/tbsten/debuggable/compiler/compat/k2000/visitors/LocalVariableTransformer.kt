@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.builders.irTry
@@ -144,9 +145,10 @@ internal class LocalVariableTransformer(
             +irCall(wrapFunction).apply {
                 putTypeArgument(0, elementType)
                 extensionReceiver = irGet(tmp)
-                putValueArgument(0, irString(variable.name.asString()))
-                putValueArgument(1, irGet(registryVar))
-                putValueArgument(2, loggerExpr)
+                putValueArgument(0, irNull())
+                putValueArgument(1, irString(variable.name.asString()))
+                putValueArgument(2, irGet(registryVar))
+                putValueArgument(3, loggerExpr)
             }
             +irGet(tmp)
         }

@@ -5,6 +5,8 @@ package me.tbsten.debuggable.compiler.compat.k21.visitors
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
@@ -53,15 +55,19 @@ internal fun injectSetterOverrides(
         val builder = DeclarationIrBuilder(pluginContext, irClass.symbol)
 
         // 1. Transform the setter body so external callers are logged.
+        val setterDispatchReceiver = setter.parameters
+            .firstOrNull { it.kind == IrParameterKind.DispatchReceiver }
         setter.body?.transformChildrenVoid(object : IrElementTransformerVoid() {
             override fun visitSetField(expression: IrSetField): org.jetbrains.kotlin.ir.expressions.IrExpression {
                 if (expression.symbol != backingField.symbol) return super.visitSetField(expression)
                 val originalValue = expression.value
+                val receiverExpr = setterDispatchReceiver?.let { builder.irGet(it) } ?: builder.irNull()
                 val wrappedValue = builder.irCall(wrapFunction).apply {
                     (typeArguments as MutableList<IrType?>)[0] = valueParam.type
-                    arguments[wrapParams[0]] = builder.irString(propertyName)
-                    arguments[wrapParams[1]] = originalValue
-                    arguments[wrapParams[2]] = loggerResolver.resolve(irClass)
+                    arguments[wrapParams[0]] = receiverExpr
+                    arguments[wrapParams[1]] = builder.irString(propertyName)
+                    arguments[wrapParams[2]] = originalValue
+                    arguments[wrapParams[3]] = loggerResolver.resolve(irClass)
                 }
                 expression.value = wrappedValue
                 return expression
@@ -74,16 +80,20 @@ internal fun injectSetterOverrides(
         val nonAccessors = irClass.declarations.filterIsInstance<IrSimpleFunction>()
             .filter { fn -> fn != setter && fn != property.getter }
         nonAccessors.forEach { fn ->
+            val fnDispatchReceiver = fn.parameters
+                .firstOrNull { it.kind == IrParameterKind.DispatchReceiver }
             fn.body?.transformChildrenVoid(object : IrElementTransformerVoid() {
                 override fun visitCall(expression: IrCall): org.jetbrains.kotlin.ir.expressions.IrExpression {
                     val visited = super.visitCall(expression) as IrCall
                     if (visited.symbol != setter.symbol) return visited
                     val originalArg = visited.arguments[valueParam] ?: return visited
+                    val receiverExpr = fnDispatchReceiver?.let { builder.irGet(it) } ?: builder.irNull()
                     val wrappedArg = builder.irCall(wrapFunction).apply {
                         (typeArguments as MutableList<IrType?>)[0] = valueParam.type
-                        arguments[wrapParams[0]] = builder.irString(propertyName)
-                        arguments[wrapParams[1]] = originalArg
-                        arguments[wrapParams[2]] = loggerResolver.resolve(irClass)
+                        arguments[wrapParams[0]] = receiverExpr
+                        arguments[wrapParams[1]] = builder.irString(propertyName)
+                        arguments[wrapParams[2]] = originalArg
+                        arguments[wrapParams[3]] = loggerResolver.resolve(irClass)
                     }
                     visited.arguments[valueParam] = wrappedArg
                     return visited

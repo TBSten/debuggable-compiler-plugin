@@ -40,6 +40,7 @@ class DiagramTest {
     fun `logDiagram routes to provided logger`() {
         val logger = InMemoryLogger()
         logDiagram(
+            null,
             "add",
             "a + b",
             DiagramCapture("a", 1),
@@ -58,7 +59,7 @@ class DiagramTest {
         val logger = InMemoryLogger()
         DefaultDebugLogger.current = logger
         try {
-            logDiagram("f", "x", DiagramCapture("x", 42))
+            logDiagram(null, "f", "x", DiagramCapture("x", 42))
             assertTrue(logger.messages.isNotEmpty())
         } finally {
             DefaultDebugLogger.current = saved

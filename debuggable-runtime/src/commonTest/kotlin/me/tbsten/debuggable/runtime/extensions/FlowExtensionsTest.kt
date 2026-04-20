@@ -19,7 +19,7 @@ class FlowExtensionsTest {
         val flow = MutableStateFlow(0)
         val registry = DebugCleanupRegistry()
 
-        flow.debuggableFlow("test", registry)
+        flow.debuggableFlow(null, "test", registry)
         flow.value = 1
         flow.value = 2
         delay(100)
@@ -32,7 +32,7 @@ class FlowExtensionsTest {
         val registry = DebugCleanupRegistry()
         val flow = MutableStateFlow(0)
 
-        flow.debuggableFlow("test", registry)
+        flow.debuggableFlow(null, "test", registry)
 
         val scope = registry.coroutineScope
         assertFalse(scope.isActive.not())
@@ -45,7 +45,7 @@ class FlowExtensionsTest {
     fun `debuggableFlow returns the same flow instance`() {
         val flow = MutableStateFlow(0)
         val registry = DebugCleanupRegistry()
-        val result = flow.debuggableFlow("test", registry)
+        val result = flow.debuggableFlow(null, "test", registry)
         assertSame(flow, result)
         registry.close()
     }

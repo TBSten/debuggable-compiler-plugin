@@ -8,11 +8,11 @@ class LoggingTest {
 
     @Test
     fun `logAction does not throw with no args`() {
-        logAction("MyClass.myMethod")
+        logAction(null, "MyClass.myMethod")
     }
 
     @Test
     fun `logAction does not throw with multiple args`() {
-        logAction("SearchViewModel.onSearchClicked", "query", 42, null)
+        logAction(null, "SearchViewModel.onSearchClicked", "query", 42, null)
     }
 }

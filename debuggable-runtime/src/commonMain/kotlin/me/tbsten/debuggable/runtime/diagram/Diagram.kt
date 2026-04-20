@@ -34,12 +34,13 @@ fun buildDiagramString(
 
 @InternalDebuggableApi
 fun logDiagram(
+    receiver: Any?,
     functionName: String,
     argExpr: String,
     vararg captures: DiagramCapture,
     logger: DebugLogger = DefaultDebugLogger,
 ) {
-    logger.log(null, buildDiagramString(functionName, argExpr, *captures), DebugLogger.NoValue)
+    logger.log(receiver, buildDiagramString(functionName, argExpr, *captures), DebugLogger.NoValue)
 }
 
 private fun valueToString(value: Any?): String = try {

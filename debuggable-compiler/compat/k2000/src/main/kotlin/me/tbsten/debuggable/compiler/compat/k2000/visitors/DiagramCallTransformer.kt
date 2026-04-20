@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.builders.irVararg
@@ -67,6 +68,13 @@ internal class DiagramCallTransformer(
         val firstArgText = transformed.getValueArgument(0)?.let { reconstructExprText(it) } ?: ""
 
         return builder.irBlock(resultType = transformed.type) {
+            // Capture dispatch receiver in a temp to safely pass it to logDiagram
+            val receiverTemp = transformed.dispatchReceiver?.let { dr ->
+                irTemporary(dr, nameHint = "_d_receiver").also {
+                    transformed.dispatchReceiver = irGet(it)
+                }
+            }
+
             val captureTemps: List<Pair<String, IrVariable>> = leafCaptures.map { (name, origExpr) ->
                 name to irTemporary(origExpr, nameHint = "_d_$name")
             }
@@ -76,10 +84,11 @@ internal class DiagramCallTransformer(
             val captureCtorParams = captureCtor.valueParameters
 
             val logCall = irCall(symbolProvider.logDiagramFunction).apply {
-                putValueArgument(0, irString(transformed.symbol.owner.name.asString()))
-                putValueArgument(1, irString(firstArgText))
+                putValueArgument(0, receiverTemp?.let { irGet(it) } ?: irNull())
+                putValueArgument(1, irString(transformed.symbol.owner.name.asString()))
+                putValueArgument(2, irString(firstArgText))
                 putValueArgument(
-                    2,
+                    3,
                     irVararg(
                         elementType = symbolProvider.diagramCaptureClass.owner.defaultType,
                         values = captureTemps.map { (name, tempVar) ->

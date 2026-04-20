@@ -5,6 +5,8 @@ package me.tbsten.debuggable.compiler.compat.k2020.visitors
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -45,15 +47,18 @@ internal fun injectSetterOverrides(
         val builder = DeclarationIrBuilder(pluginContext, irClass.symbol)
 
         // 1. Transform the setter body so external callers are logged.
+        val setterDispatchReceiver = setter.dispatchReceiverParameter
         setter.body?.transformChildrenVoid(object : IrElementTransformerVoid() {
             override fun visitSetField(expression: IrSetField): IrExpression {
                 if (expression.symbol != backingField.symbol) return super.visitSetField(expression)
                 val originalValue = expression.value
+                val receiverExpr = setterDispatchReceiver?.let { builder.irGet(it) } ?: builder.irNull()
                 val wrappedValue = builder.irCall(wrapFunction).apply {
                     putTypeArgument(0, valueParam.type)
-                    putValueArgument(0, builder.irString(propertyName))
-                    putValueArgument(1, originalValue)
-                    putValueArgument(2, loggerResolver.resolve(irClass))
+                    putValueArgument(0, receiverExpr)
+                    putValueArgument(1, builder.irString(propertyName))
+                    putValueArgument(2, originalValue)
+                    putValueArgument(3, loggerResolver.resolve(irClass))
                 }
                 expression.value = wrappedValue
                 return expression
@@ -66,16 +71,19 @@ internal fun injectSetterOverrides(
         irClass.declarations.filterIsInstance<IrSimpleFunction>()
             .filter { fn -> fn != setter && fn != property.getter }
             .forEach { fn ->
+                val fnDispatchReceiver = fn.dispatchReceiverParameter
                 fn.body?.transformChildrenVoid(object : IrElementTransformerVoid() {
                     override fun visitCall(expression: IrCall): IrExpression {
                         val visited = super.visitCall(expression) as IrCall
                         if (visited.symbol != setter.symbol) return visited
                         val originalArg = visited.getValueArgument(0) ?: return visited
+                        val receiverExpr = fnDispatchReceiver?.let { builder.irGet(it) } ?: builder.irNull()
                         val wrappedArg = builder.irCall(wrapFunction).apply {
                             putTypeArgument(0, valueParam.type)
-                            putValueArgument(0, builder.irString(propertyName))
-                            putValueArgument(1, originalArg)
-                            putValueArgument(2, loggerResolver.resolve(irClass))
+                            putValueArgument(0, receiverExpr)
+                            putValueArgument(1, builder.irString(propertyName))
+                            putValueArgument(2, originalArg)
+                            putValueArgument(3, loggerResolver.resolve(irClass))
                         }
                         visited.putValueArgument(0, wrappedArg)
                         return visited

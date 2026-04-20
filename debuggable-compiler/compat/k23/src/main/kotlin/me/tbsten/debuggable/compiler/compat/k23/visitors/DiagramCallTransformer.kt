@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irNull
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.builders.irVararg
@@ -87,6 +88,14 @@ internal class DiagramCallTransformer(
             ?: ""
 
         return builder.irBlock(resultType = transformed.type) {
+            // Capture dispatch receiver in a temp to safely pass it to logDiagram and keep
+            // the original call's dispatch receiver consistent.
+            val receiverTemp = transformed.dispatchReceiver?.let { dr ->
+                irTemporary(dr, nameHint = "_d_receiver").also {
+                    transformed.dispatchReceiver = irGet(it)
+                }
+            }
+
             // Create temps for each captured leaf
             val captureTemps: List<Pair<String, IrVariable>> = leafCaptures.map { (name, origExpr) ->
                 name to irTemporary(origExpr, nameHint = "_d_$name")
@@ -100,9 +109,10 @@ internal class DiagramCallTransformer(
                 .filter { it.kind == IrParameterKind.Regular }
 
             val logCall = irCall(symbolProvider.logDiagramFunction).apply {
-                arguments[logDiagramParams[0]] = irString(transformed.symbol.owner.name.asString())
-                arguments[logDiagramParams[1]] = irString(firstArgText)
-                arguments[logDiagramParams[2]] = irVararg(
+                arguments[logDiagramParams[0]] = receiverTemp?.let { irGet(it) } ?: irNull()
+                arguments[logDiagramParams[1]] = irString(transformed.symbol.owner.name.asString())
+                arguments[logDiagramParams[2]] = irString(firstArgText)
+                arguments[logDiagramParams[3]] = irVararg(
                     elementType = symbolProvider.diagramCaptureClass.owner.defaultType,
                     values = captureTemps.map { (name, tempVar) ->
                         irCall(diagramCaptureCtor).apply {
@@ -111,7 +121,7 @@ internal class DiagramCallTransformer(
                         }
                     },
                 )
-                arguments[logDiagramParams[3]] = loggerResolver.resolve(receiverClass)
+                arguments[logDiagramParams[4]] = loggerResolver.resolve(receiverClass)
             }
             +logCall
 

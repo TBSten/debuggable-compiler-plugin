@@ -20,12 +20,13 @@ import me.tbsten.debuggable.runtime.registry.DebugCleanupRegistry
  */
 @InternalDebuggableApi
 fun <T> State<T>.debuggableState(
+    receiver: Any?,
     name: String,
     registry: DebugCleanupRegistry = DebugCleanupRegistry.Default,
     logger: DebugLogger = DefaultDebugLogger,
 ): State<T> {
     snapshotFlow { value }
-        .onEach { logger.log(null, name, it) }
+        .onEach { logger.log(receiver, name, it) }
         .launchIn(registry.coroutineScope)
     return this
 }

@@ -30,10 +30,11 @@ import me.tbsten.debuggable.runtime.logging.DefaultDebugLogger
  */
 @InternalDebuggableApi
 fun <T> debuggableSet(
+    receiver: Any?,
     name: String,
     value: T,
     logger: DebugLogger = DefaultDebugLogger,
 ): T {
-    logger.log(null, name, value)
+    logger.log(receiver, name, value)
     return value
 }

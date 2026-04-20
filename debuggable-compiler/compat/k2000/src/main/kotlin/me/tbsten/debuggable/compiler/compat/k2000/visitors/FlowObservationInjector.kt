@@ -64,9 +64,10 @@ internal fun injectFlowObservations(
                 +irCall(wrapFunction).apply {
                     putTypeArgument(0, elementType)
                     extensionReceiver = irGet(tmp)
-                    putValueArgument(0, irString(property.name.asString()))
-                    putValueArgument(1, registryExpr)
-                    putValueArgument(2, loggerExpr)
+                    putValueArgument(0, irGet(irClass.thisReceiver!!))
+                    putValueArgument(1, irString(property.name.asString()))
+                    putValueArgument(2, registryExpr)
+                    putValueArgument(3, loggerExpr)
                 }
                 +irGet(tmp)
             }

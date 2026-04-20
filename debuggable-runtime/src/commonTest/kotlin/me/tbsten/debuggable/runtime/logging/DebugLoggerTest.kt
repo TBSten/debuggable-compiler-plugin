@@ -55,7 +55,7 @@ class DebugLoggerTest {
         val captured = mutableListOf<String>()
         DefaultDebugLogger.current = DebugLogger { _, name, v -> captured += format(name, v) }
 
-        logAction("greet", "alice", 42)
+        logAction(null, "greet", "alice", 42)
 
         assertEquals(listOf("greet(alice, 42)"), captured)
     }

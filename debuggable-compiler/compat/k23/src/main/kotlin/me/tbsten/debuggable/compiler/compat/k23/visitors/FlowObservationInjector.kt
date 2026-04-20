@@ -61,7 +61,7 @@ internal fun injectFlowObservations(
 
         val loggerExpr = loggerResolver.resolve(irClass)
 
-        // Wrap the field initializer: originalInit.also { it.debuggableFlow(name, registry, logger) }
+        // Wrap the field initializer: originalInit.also { it.debuggableFlow(receiver, name, registry, logger) }
         // In IR: block { val tmp = originalInit; tmp.debuggableFlow(...); tmp }
         field.initializer = builder.irExprBody(
             builder.irBlock(resultType = field.type) {
@@ -69,9 +69,10 @@ internal fun injectFlowObservations(
                 +irCall(wrapFunction).apply {
                     (typeArguments as MutableList<IrType?>)[0] = elementType
                     insertExtensionReceiver(irGet(tmp))
-                    arguments[wrapParams[0]] = irString(property.name.asString())
-                    arguments[wrapParams[1]] = registryExpr
-                    arguments[wrapParams[2]] = loggerExpr
+                    arguments[wrapParams[0]] = irGet(irClass.thisReceiver!!)
+                    arguments[wrapParams[1]] = irString(property.name.asString())
+                    arguments[wrapParams[2]] = registryExpr
+                    arguments[wrapParams[3]] = loggerExpr
                 }
                 +irGet(tmp)
             }

@@ -16,7 +16,7 @@ class StateExtensionsTest {
     fun `debuggableState returns the same state instance`() {
         val state = mutableStateOf(0)
         val registry = DebugCleanupRegistry()
-        val result = state.debuggableState("test", registry)
+        val result = state.debuggableState(null, "test", registry)
         assertSame(state, result)
         registry.close()
     }
@@ -26,7 +26,7 @@ class StateExtensionsTest {
         val state = mutableStateOf(0)
         val registry = DebugCleanupRegistry()
 
-        state.debuggableState("test", registry)
+        state.debuggableState(null, "test", registry)
 
         val scope = registry.coroutineScope
         registry.close()
