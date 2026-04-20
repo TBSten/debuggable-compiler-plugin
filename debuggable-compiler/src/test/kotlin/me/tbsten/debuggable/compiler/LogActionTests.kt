@@ -245,4 +245,80 @@ class LogActionTests : CompilerTestBase() {
         val output = captureSystemOut { obj.call("doWithVararg", arrayOf("a", "b")) }
         assertTrue(output.contains("doWithVararg"), "Expected method name in log, got: $output")
     }
+
+    @Test fun `arg toString throwing does not prevent the function body from running`() {
+        // task-134: `logAction(name, vararg args, logger)` is injected as the
+        // FIRST statement of the function body. The runtime's `Logging.kt`
+        // formats args with `args.joinToString()` → `.toString()` per arg.
+        // If the user's arg has a throwing `toString()`, the injected log
+        // call throws BEFORE the original function body runs — so a plain
+        // `fun login(user: BadUser)` call that would otherwise succeed starts
+        // failing because we injected observation. Unacceptable side-effect.
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            class BadUser { override fun toString(): String = error("boom") }
+            @Debuggable(isSingleton = true) object Gateway {
+                var sideEffectRan = false
+                fun handle(u: BadUser) { sideEffectRan = true }
+            }
+            """.trimIndent(),
+        )
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val gatewayCls = result.classLoader.loadClass("Gateway")
+        val gateway = gatewayCls.getField("INSTANCE").get(null)
+        val badUserCls = result.classLoader.loadClass("BadUser")
+        val badUser = badUserCls.getDeclaredConstructor().newInstance()
+
+        // Suppress the stderr noise from the logger (if any) so the test
+        // output stays clean even when this fails.
+        captureSystemOut {
+            val handle = gatewayCls.getDeclaredMethod("handle", badUserCls)
+            handle.invoke(gateway, badUser)
+        }
+
+        val ran = gatewayCls.getDeclaredMethod("getSideEffectRan").invoke(gateway) as Boolean
+        assertTrue(
+            ran,
+            "function body must run even when an argument's toString() throws (task-134)",
+        )
+    }
+
+    @Test fun `data class generated toString does not cause infinite recursion`() {
+        // task-135: logAction writes via the logger, and the default logger
+        // formats the call as `"toString()"` — which for a @Debuggable data
+        // class injects logAction into the generated toString, which formats
+        // by calling toString, …. Infinite recursion / StackOverflowError.
+        //
+        // The fix is to filter generated members (data-class copy / equals /
+        // hashCode / toString / componentN) out of `targetFunctions` in
+        // `DebuggableClassTransformer`.
+        val result = compile(
+            // language=kotlin
+            """
+            import me.tbsten.debuggable.runtime.annotations.Debuggable
+            @Debuggable(isSingleton = true)
+            data class User(val name: String, val age: Int)
+            """.trimIndent(),
+        )
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val userClass = result.classLoader.loadClass("User")
+        val instance = userClass.getDeclaredConstructor(String::class.java, Int::class.javaPrimitiveType)
+            .newInstance("daisy", 30)
+
+        // If logAction was injected into toString(), this call would recurse
+        // on itself (logAction → formatter → toString → logAction → …) and
+        // throw StackOverflowError. A well-behaved transformation skips
+        // generated members entirely.
+        val output = captureSystemOut { instance.toString() }
+        // toString should return the standard data-class representation.
+        assertEquals("User(name=daisy, age=30)", instance.toString())
+        // And it should NOT have logged anything — generated members are not
+        // user-authored public methods, so logAction must not fire on them.
+        assertFalse(
+            output.contains("toString"),
+            "logAction must not be injected into data-class-generated toString(); got: $output",
+        )
+    }
 }

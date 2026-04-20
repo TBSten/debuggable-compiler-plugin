@@ -160,6 +160,8 @@ internal class DebuggableClassTransformer(
         val targetFunctions = functions.filter { fn ->
             if (fn.isFakeOverride || fn.visibility != DescriptorVisibilities.PUBLIC) return@filter false
             if (fn.hasAnnotation(AnnotationFqNames.IGNORE_DEBUGGABLE)) return@filter false
+            // See k23 equivalent: skip generated / Any-override members.
+            if (isGeneratedOrAnyOverride(fn)) return@filter false
             if (focusMode) fn.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
             else true
         }
@@ -228,6 +230,21 @@ internal class DebuggableClassTransformer(
             if (fqn == "java.lang.AutoCloseable" || fqn == "kotlin.AutoCloseable") return@any true
             type.classOrNull?.owner?.implementsAutoCloseable() ?: false
         }
+
+    // Canonical member names that the Kotlin compiler either inherits from
+    // Any or generates for data classes. Excluded from logAction injection.
+    private val ANY_OR_DATA_GENERATED_NAMES = setOf("toString", "equals", "hashCode", "copy")
+
+    private fun isGeneratedOrAnyOverride(fn: IrSimpleFunction): Boolean {
+        val n = fn.name.asString()
+        if (n in ANY_OR_DATA_GENERATED_NAMES) return true
+        if (n.startsWith("component") && n.length > "component".length &&
+            n.drop("component".length).all { it.isDigit() }
+        ) {
+            return true
+        }
+        return false
+    }
 
     private fun IrClass.isSingletonDebuggable(): Boolean {
         val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false

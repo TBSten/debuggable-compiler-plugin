@@ -171,6 +171,12 @@ internal class DebuggableClassTransformer(
         val targetFunctions = functions.filter { fn ->
             if (fn.isFakeOverride || fn.visibility != DescriptorVisibilities.PUBLIC) return@filter false
             if (fn.hasAnnotation(AnnotationFqNames.IGNORE_DEBUGGABLE)) return@filter false
+            // Skip data-class generated + Any-override members: injecting
+            // logAction into toString / equals / hashCode / copy / componentN
+            // produces noisy log output (every println of a @Debuggable data
+            // class prints a `toString()` log entry) and — depending on the
+            // installed logger's formatter — can recurse via Any.toString.
+            if (isGeneratedOrAnyOverride(fn)) return@filter false
             if (focusMode) fn.hasAnnotation(AnnotationFqNames.FOCUS_DEBUGGABLE)
             else true
         }
@@ -239,6 +245,23 @@ internal class DebuggableClassTransformer(
             if (fqn == "java.lang.AutoCloseable" || fqn == "kotlin.AutoCloseable") return@any true
             type.classOrNull?.owner?.implementsAutoCloseable() ?: false
         }
+
+    // Canonical member names that the Kotlin compiler either inherits from
+    // Any or generates for data classes. Excluded from logAction injection.
+    // componentN is handled separately because the count suffix is unbounded.
+    private val ANY_OR_DATA_GENERATED_NAMES = setOf("toString", "equals", "hashCode", "copy")
+
+    private fun isGeneratedOrAnyOverride(fn: IrSimpleFunction): Boolean {
+        val n = fn.name.asString()
+        if (n in ANY_OR_DATA_GENERATED_NAMES) return true
+        // `component1`, `component2`, … from data classes.
+        if (n.startsWith("component") && n.length > "component".length &&
+            n.drop("component".length).all { it.isDigit() }
+        ) {
+            return true
+        }
+        return false
+    }
 
     private fun IrClass.isSingletonDebuggable(): Boolean {
         val annotation = getAnnotationCompat(AnnotationFqNames.DEBUGGABLE) ?: return false
