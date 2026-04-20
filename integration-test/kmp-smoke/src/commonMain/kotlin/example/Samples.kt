@@ -32,3 +32,8 @@ object UserForm {
     @FocusDebuggable var age: Int = 0
     @FocusDebuggable var agreedToTerms: Boolean = false
 }
+
+@Debuggable(isSingleton = true, captureStack = true)
+object TracedCalc {
+    fun compute(x: Int): Int = x * 2
+}
