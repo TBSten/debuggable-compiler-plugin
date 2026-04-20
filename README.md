@@ -93,7 +93,25 @@ object UserForm {
 // UserForm.age  = 30        → "[Debuggable] age: 30"
 ```
 
-### 3. Replacing the Logger
+### 3. Capturing Call Stack (JVM / Android only)
+
+Add `captureStack = true` to append the caller's stack trace to every `logAction` log entry, making it easy to trace *where* a method was called from.
+
+```kotlin
+@Debuggable(isSingleton = true, captureStack = true)
+object Counter {
+    fun tick(): Int { /* ... */ }
+}
+
+// Output:
+// [Debuggable] tick()
+//   at com.example.MainActivity.onButtonClick(MainActivity.kt:42)
+//   at com.example.MainActivity$lambda(MainActivity.kt:28)
+```
+
+> **Note**: Stack capture is only supported on JVM and Android targets. On JS, wasmJs, and Native the log is emitted normally without a stack trace.
+
+### 4. Replacing the Logger
 
 By default, logs go to Android Logcat (tag `"Debuggable"`) on Android and stdout (`[Debuggable] …` prefix) everywhere else. You can route them to Timber, a file, a test collector, or anything else using any of three mechanisms (higher wins):
 
@@ -157,7 +175,7 @@ DebuggableLogViewer(uiLogger, modifier = Modifier.fillMaxSize())
 
 `UiDebugLogger` maintains a ring buffer (default 1000 entries) as a `StateFlow`, and `DebuggableLogViewer` is a Compose Multiplatform composable that renders it with built-in substring filtering and auto-scroll. Currently ships for `jvm` + `androidTarget` — other KMP targets are follow-ups.
 
-### 4. Configuration
+### 5. Configuration
 
 The Gradle plugin exposes per-feature toggles and a compile-time default logger so individual aspects can be disabled or redirected without runtime setup.
 
@@ -175,7 +193,7 @@ debuggable {
 
 When `enabled = false`, the plugin is a complete no-op — no IR transformations, no runtime dependency surfaces in the output binary. When `observeFlow` or `logAction` is individually disabled, only that transformation is skipped.
 
-### 5. Internal Mechanism
+### 6. Internal Mechanism
 
 A high-level view of what the plugin injects into your classes at compile time. You don't need to know any of this to use `@Debuggable`, but it helps when something behaves unexpectedly.
 
@@ -208,7 +226,7 @@ When `enabled.set(false)` is configured on the Gradle plugin side (the default f
 
 ---
 
-### 6. Release Builds & Privacy
+### 7. Release Builds & Privacy
 
 > **⚠️ Important:** With default settings, `@Debuggable` logs the current value of every tracked `State` / `Flow` and the full argument list of every annotated action — using each value's `toString()`. That can include tokens, passwords, email addresses, and other personal data. **Do not ship production builds with Debuggable enabled unless you understand this trade-off.**
 
