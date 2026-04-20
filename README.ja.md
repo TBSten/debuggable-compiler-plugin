@@ -10,8 +10,6 @@
 
 ### 1. インストール
 
-**Kotlin/JVM, Android, KMP (JVM ターゲット)**
-
 ```kotlin
 plugins {
     kotlin("jvm") // もしくは kotlin("android"), kotlin("multiplatform")
@@ -19,45 +17,45 @@ plugins {
 }
 ```
 
-**Kotlin Multiplatform (common ソースセット)**
-
-```kotlin
-plugins {
-    kotlin("multiplatform")
-    id("me.tbsten.debuggablecompilerplugin") version "0.2.0"
-}
-```
-
-runtime は `jvm` / `androidTarget` / `js` / `wasmJs` / `iosArm64` / `iosSimulatorArm64` / `macosArm64` / `linuxX64` / `mingwX64` 向けに publish されています。
-
-Android ではデフォルトで Logcat にタグ `"Debuggable"` で出力されます (`AndroidLogcatLogger`)。それ以外のプラットフォームでは `[Debuggable]` プレフィックス付きで stdout に出ます。出力先の変更方法は [§5 ロガーの差し替え](#5-ロガーの差し替え) を参照。
-
 ### 2. 基本的な使用方法
-`@Debuggable` をクラスに付与するだけで、その中の `State` と `Flow` が自動的にトラッキングされます。
+
+`@Debuggable` をクラスに付与するだけで、その中の `State` と `Flow`, var で宣言した変数 が自動的にトラッキングされ ログに出力されます。
 
 ```kotlin
 @Debuggable
 class SearchViewModel : ViewModel() {
-    // 自動的に値の変化がログ出力され、ViewModel破棄時に監視も解除される
+    // 自動的に値の変化がログ出力される
     val searchQuery = MutableStateFlow("")
-    val uiState = mutableStateOf(UiState())
+    val uiState by mutableStateOf(UiState())
+    var count = 123
 
     // 関数の呼び出し（アクション）も引数と共に自動記録
     fun onSearchClicked(query: String) { ... }
 }
 ```
 
-`Flow` / `State` 以外の普通の `var` property も**デフォルトで**追跡されます。setter が書き換わり、代入のたびにログが出ます。`@IgnoreDebuggable` で個別に除外できます:
+特定のプロパティを非表示にしたい場合は `@IgnoreDebuggable` を、特定のプロパティだけを表示（それ以外は非表示）したい場合は `@FocusDebuggable` を使用できます。
 
 ```kotlin
 @Debuggable(isSingleton = true)
 object UserForm {
-    var name: String = ""   // 自動で追跡
-    var age: Int = 0        // 自動で追跡
-    @IgnoreDebuggable var internal: String = ""  // 除外
+  var name: String = ""   // 自動で追跡
+  var age: Int = 0        // 自動で追跡
+  @IgnoreDebuggable var internal: String = ""  // 除外
 }
 // UserForm.name = "daisy"   → "[Debuggable] name: daisy"
 // UserForm.age  = 30        → "[Debuggable] age: 30"
+// UserForm.internal         → 表示されない
+
+@Debuggable(isSingleton = true)
+object UserForm {
+  var name: String = ""   // 除外
+  var age: Int = 0        // 除外
+  @FocusDebuggable var debugTarget: String = ""  // 自動で追跡
+}
+// UserForm.name = "daisy"                → 表示されない
+// UserForm.age  = 30                     → 表示されない
+// UserForm.debugTarget = "new value"     → "[Debuggable] debugTarget: new value"
 ```
 
 ### 3. ダイアグラムログ (Power-Assert スタイル)
